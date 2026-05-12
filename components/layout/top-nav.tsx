@@ -3,36 +3,49 @@ import { CalendarDays, Menu } from "lucide-react";
 import { signOutAction } from "@/lib/auth/actions";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { SyncStatus } from "@/components/offline/sync-status";
+import { ShiftNotifications } from "./shift-notifications";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { UserProfile } from "@/types/domain";
+import type { Shift, UserProfile } from "@/types/domain";
 
-export function TopNav({ profile }: { profile: UserProfile | null }) {
+export function TopNav({ profile, shifts = [] }: { profile: UserProfile | null; shifts?: Shift[] }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-black text-white">
-      <div className="mx-auto flex h-11 max-w-6xl items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2 text-xs tracking-[-0.01em]">
-          <CalendarDays className="h-4 w-4" />
-          Planillas
+    <header className="sticky top-0 z-40 bg-white/88 text-foreground shadow-[0_18px_44px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:bg-black/88 dark:text-white dark:shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
+      <div className="pointer-events-none absolute inset-0 bg-black/[0.03] dark:bg-white/[0.04]" />
+      <div className="relative mx-auto grid min-h-16 max-w-6xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2 sm:min-h-20">
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+          <CalendarDays className="h-5 w-5" />
+          <span className="hidden min-[380px]:inline">Planillas</span>
         </Link>
-        <nav className="hidden items-center gap-4 text-xs sm:flex">
+        {profile && (
+          <div className="min-w-0 text-center">
+            <p className="truncate text-sm font-semibold leading-tight sm:text-base">{profile.firstName}</p>
+            <p className="truncate text-xs leading-tight text-muted-foreground dark:text-white/70">{profile.unit}</p>
+          </div>
+        )}
+        <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-3 text-sm sm:flex lg:gap-5">
           {profile?.role === "Admin" && <Link href="/admin">Admin</Link>}
           {(profile?.role === "Admin" || profile?.role === "Supervisor") && <Link href="/supervisor">Supervisor</Link>}
+          <SyncStatus />
+          <ShiftNotifications shifts={shifts} />
           <ThemeToggle />
           {profile && (
             <form action={signOutAction}>
-              <Button className="h-8 px-3 text-xs" type="submit" variant="utility">
+              <Button className="h-10 px-4 text-sm" type="submit" variant="utility">
                 Salir
               </Button>
             </form>
           )}
         </nav>
-        <div className="flex items-center gap-2 sm:hidden">
+        <div className="flex items-center justify-end gap-2 sm:hidden">
+          <SyncStatus />
+          <ShiftNotifications shifts={shifts} />
           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Abrir menú"
-                className="border border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                className="border-0 bg-black/8 text-foreground hover:bg-black/12 hover:text-foreground dark:bg-white/12 dark:text-white dark:hover:bg-white/22 dark:hover:text-white"
                 size="icon"
                 type="button"
                 variant="outline"

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createSwapRequestAction } from "@/lib/swaps/actions";
+import { createSwapRequestClientAction } from "@/lib/offline/client-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,14 +23,21 @@ export function CreateSwapRequestModal({ shift, open, onClose }: { shift: Shift 
     }
 
     startTransition(async () => {
-      const formData = new FormData();
-      formData.set("shiftId", currentShift.id);
-      formData.set("offeredShiftCodes", currentShift.shiftCodes.join("+"));
-      formData.set("proposedDates", proposedDates);
-      const result = await createSwapRequestAction(formData);
+      const result = await createSwapRequestClientAction({
+        shiftId: currentShift.id,
+        offeredShiftCodes: currentShift.shiftCodes,
+        proposedDates: proposedDates
+          .split(",")
+          .map((date) => date.trim())
+          .filter(Boolean)
+      });
 
       if (result.ok) {
-        toast.success(result.message);
+        if (result.message.startsWith("Sin conexión")) {
+          toast.info(result.message);
+        } else {
+          toast.success(result.message);
+        }
         onClose();
       } else {
         toast.error(result.message);

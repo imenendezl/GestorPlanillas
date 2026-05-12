@@ -12,18 +12,18 @@ export function RegisterForm({ error, units }: { error?: string; units: string[]
     <form action={signUpAction} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-semibold">Nombre</label>
-          <Input name="firstName" required />
+          <label className="mb-2 block text-sm font-semibold" htmlFor="firstName">Nombre</label>
+          <Input autoComplete="given-name" id="firstName" name="firstName" required />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-semibold">Apellidos</label>
-          <Input name="lastName" required />
+          <label className="mb-2 block text-sm font-semibold" htmlFor="lastName">Apellidos</label>
+          <Input autoComplete="family-name" id="lastName" name="lastName" required />
         </div>
       </div>
       <div>
-        <label className="mb-2 block text-sm font-semibold">Unidad/Servicio</label>
+        <label className="mb-2 block text-sm font-semibold" htmlFor="unit">Unidad/Servicio</label>
         <Select name="unit" required defaultValue={defaultUnit}>
-          <SelectTrigger>
+          <SelectTrigger id="unit">
             <SelectValue placeholder="Selecciona unidad" />
           </SelectTrigger>
           <SelectContent>
@@ -36,9 +36,9 @@ export function RegisterForm({ error, units }: { error?: string; units: string[]
         </Select>
       </div>
       <div>
-        <label className="mb-2 block text-sm font-semibold">Categoría profesional</label>
+        <label className="mb-2 block text-sm font-semibold" htmlFor="position">Categoría profesional</label>
         <Select name="position" required defaultValue="Nurse">
-          <SelectTrigger>
+          <SelectTrigger id="position">
             <SelectValue placeholder="Selecciona categoría" />
           </SelectTrigger>
           <SelectContent>
@@ -48,12 +48,12 @@ export function RegisterForm({ error, units }: { error?: string; units: string[]
         </Select>
       </div>
       <div>
-        <label className="mb-2 block text-sm font-semibold">Correo electrónico</label>
-        <Input name="email" required type="email" />
+        <label className="mb-2 block text-sm font-semibold" htmlFor="email">Correo electrónico</label>
+        <Input autoComplete="email" id="email" name="email" required type="email" />
       </div>
       <div>
-        <label className="mb-2 block text-sm font-semibold">Contraseña</label>
-        <Input minLength={6} name="password" required type="password" />
+        <label className="mb-2 block text-sm font-semibold" htmlFor="password">Contraseña</label>
+        <Input autoComplete="new-password" id="password" minLength={6} name="password" required type="password" />
       </div>
       {error && (
         <Alert variant="error">

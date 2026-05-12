@@ -1,25 +1,35 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { MonthCalendar } from "@/components/calendar/month-calendar";
-import { QuickShiftWizard } from "@/components/calendar/quick-shift-wizard";
-import { SwapBoard } from "@/components/swaps/swap-board";
+import { DashboardSnapshotWriter } from "@/components/offline/dashboard-snapshot-writer";
+import { OfflineDashboard } from "@/components/offline/offline-dashboard";
+import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/actions";
 import { listCurrentUserShifts } from "@/lib/shifts/actions";
+import { listVisibleSwapRequests } from "@/lib/swaps/actions";
 
 export default async function DashboardPage() {
-  const [profile, shifts] = await Promise.all([getCurrentProfile(), listCurrentUserShifts()]);
+  const [profileResult, shiftsResult, swapsResult] = await Promise.allSettled([
+    getCurrentProfile(),
+    listCurrentUserShifts(),
+    listVisibleSwapRequests()
+  ]);
+  if (profileResult.status === "rejected") {
+    return <OfflineDashboard />;
+  }
+
+  const profile = profileResult.value;
+  const shifts = shiftsResult.status === "fulfilled" ? shiftsResult.value : [];
+  const swapRequests = swapsResult.status === "fulfilled" ? swapsResult.value : [];
+
+  if (!profile) {
+    redirect("/login");
+  }
 
   return (
-    <AppShell>
+    <AppShell profile={profile} shifts={shifts}>
+      <DashboardSnapshotWriter profile={profile} shifts={shifts} swapRequests={swapRequests} />
       <div className="space-y-8">
-        <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{profile?.unit}</p>
-            <h1 className="font-display text-3xl font-semibold tracking-[-0.01em] sm:text-4xl">Hola, {profile?.firstName}</h1>
-          </div>
-          <QuickShiftWizard shifts={shifts} />
-        </section>
         <MonthCalendar shifts={shifts} />
-        <SwapBoard />
       </div>
     </AppShell>
   );

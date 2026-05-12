@@ -6,7 +6,13 @@ import { getRequestUserContext } from "@/lib/auth/session";
 import type { SwapRequest } from "@/types/domain";
 
 export async function listVisibleSwapRequests() {
-  const context = await getRequestUserContext();
+  let context;
+
+  try {
+    context = await getRequestUserContext();
+  } catch {
+    return [];
+  }
 
   if (!context) {
     return [];

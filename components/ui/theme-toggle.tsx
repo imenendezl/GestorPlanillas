@@ -14,7 +14,7 @@ export function ThemeToggle() {
       <DropdownMenuTrigger asChild>
         <Button
           aria-label="Cambiar tema"
-          className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          className="border-0 bg-black/8 text-foreground hover:bg-black/12 hover:text-foreground dark:bg-white/12 dark:text-white dark:hover:bg-white/22 dark:hover:text-white"
           size="icon"
           type="button"
           variant="outline"

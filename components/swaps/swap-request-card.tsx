@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { acceptSwapRequestAction } from "@/lib/swaps/actions";
+import { acceptSwapRequestClientAction } from "@/lib/offline/client-actions";
 import { formatShiftCodes } from "@/lib/utils/shift";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,12 +13,14 @@ export function SwapRequestCard({ request }: { request: SwapRequest }) {
 
   function acceptRequest() {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.set("requestId", request.id);
-      const result = await acceptSwapRequestAction(formData);
+      const result = await acceptSwapRequestClientAction(request.id);
 
       if (result.ok) {
-        toast.success(result.message);
+        if (result.message.startsWith("Sin conexión")) {
+          toast.info(result.message);
+        } else {
+          toast.success(result.message);
+        }
       } else {
         toast.error(result.message);
       }

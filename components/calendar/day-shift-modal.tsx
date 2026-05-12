@@ -2,9 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createSwapRequestAction } from "@/lib/swaps/actions";
-import { createWorkRequestAction } from "@/lib/work-requests/actions";
-import { deleteShiftAction, saveShiftAction } from "@/lib/shifts/actions";
+import {
+  createSwapRequestClientAction,
+  createWorkRequestClientAction,
+  deleteShiftClientAction,
+  saveShiftClientAction
+} from "@/lib/offline/client-actions";
 import { formatSpanishDate } from "@/lib/utils/date";
 import { formatShiftCodes, isValidShiftCombination, shiftDefinitions, sortShiftCodes } from "@/lib/utils/shift";
 import { Button } from "@/components/ui/button";
@@ -48,7 +51,11 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
     startTransition(async () => {
       const result = await action();
       if (result.ok) {
-        toast.success(result.message);
+        if (result.message.startsWith("Sin conexión")) {
+          toast.info(result.message);
+        } else {
+          toast.success(result.message);
+        }
         onClose();
       } else {
         toast.error(result.message);
@@ -95,10 +102,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
               disabled={isPending}
               onClick={() =>
                 runAction(async () => {
-                  const formData = new FormData();
-                  formData.set("shiftDate", date);
-                  formData.set("shiftCodes", selectedCodes.join("+"));
-                  return saveShiftAction(formData);
+                  return saveShiftClientAction(date, selectedCodes, shift);
                 })
               }
               type="button"
@@ -108,7 +112,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
           </div>
 
           <div className="space-y-3 border-t pt-5">
-            <Button disabled={isPending} onClick={() => runAction(() => createWorkRequestAction(date))} type="button" variant="secondary">
+            <Button disabled={isPending} onClick={() => runAction(() => createWorkRequestClientAction(date))} type="button" variant="secondary">
               Solicitar trabajar
             </Button>
 
@@ -123,11 +127,14 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
                   onClick={() =>
                     runAction(async () => {
                       const input = document.getElementById("proposedDates") as HTMLInputElement | null;
-                      const formData = new FormData();
-                      formData.set("shiftId", shift.id);
-                      formData.set("offeredShiftCodes", shift.shiftCodes.join("+"));
-                      formData.set("proposedDates", input?.value ?? "");
-                      return createSwapRequestAction(formData);
+                      return createSwapRequestClientAction({
+                        shiftId: shift.id,
+                        offeredShiftCodes: shift.shiftCodes,
+                        proposedDates: (input?.value ?? "")
+                          .split(",")
+                          .map((proposedDate) => proposedDate.trim())
+                          .filter(Boolean)
+                      });
                     })
                   }
                   type="button"
@@ -139,9 +146,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
                   disabled={isPending}
                   onClick={() =>
                     runAction(async () => {
-                      const formData = new FormData();
-                      formData.set("shiftId", shift.id);
-                      return deleteShiftAction(formData);
+                      return deleteShiftClientAction(shift);
                     })
                   }
                   type="button"

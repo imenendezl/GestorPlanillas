@@ -17,14 +17,14 @@ export function LoginForm({
     <div className="space-y-5">
       <form action={signInAction} className="space-y-5">
         <div>
-          <label className="mb-2 block text-sm font-semibold">
+          <label className="mb-2 block text-sm font-semibold" htmlFor="email">
             Correo electrónico
           </label>
-          <Input name="email" required type="email" />
+          <Input autoComplete="email" id="email" name="email" required type="email" />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-semibold">Contraseña</label>
-          <Input name="password" required type="password" />
+          <label className="mb-2 block text-sm font-semibold" htmlFor="password">Contraseña</label>
+          <Input autoComplete="current-password" id="password" name="password" required type="password" />
         </div>
         {message && (
           <Alert variant="success">
@@ -46,10 +46,12 @@ export function LoginForm({
           className="space-y-3 rounded-apple border bg-muted/35 p-4"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold">
+            <label className="mb-2 block text-sm font-semibold" htmlFor="devAdminEmail">
               Acceso admin de desarrollo
             </label>
             <Input
+              autoComplete="email"
+              id="devAdminEmail"
               name="devAdminEmail"
               placeholder="Usuario admin"
               required

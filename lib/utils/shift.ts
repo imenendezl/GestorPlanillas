@@ -4,6 +4,8 @@ export type ShiftDefinition = {
   code: ShiftCode;
   label: string;
   shortLabel: string;
+  backgroundColor: string;
+  foregroundColor: string;
   colorClassName: string;
   mutedColorClassName: string;
   order: number;
@@ -14,6 +16,8 @@ export const shiftDefinitions: ShiftDefinition[] = [
     code: "M",
     label: "Mañana",
     shortLabel: "M",
+    backgroundColor: "#0284c7",
+    foregroundColor: "#ffffff",
     colorClassName: "bg-sky-600 text-white border-sky-600",
     mutedColorClassName: "bg-sky-50 text-sky-900 border-sky-200 dark:bg-sky-950 dark:text-sky-100 dark:border-sky-800",
     order: 10
@@ -22,6 +26,8 @@ export const shiftDefinitions: ShiftDefinition[] = [
     code: "T",
     label: "Tarde",
     shortLabel: "T",
+    backgroundColor: "#f59e0b",
+    foregroundColor: "#1d1d1f",
     colorClassName: "bg-amber-500 text-ink border-amber-500",
     mutedColorClassName: "bg-amber-50 text-amber-950 border-amber-200 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800",
     order: 20
@@ -30,6 +36,8 @@ export const shiftDefinitions: ShiftDefinition[] = [
     code: "N",
     label: "Noche",
     shortLabel: "N",
+    backgroundColor: "#4338ca",
+    foregroundColor: "#ffffff",
     colorClassName: "bg-indigo-700 text-white border-indigo-700",
     mutedColorClassName: "bg-indigo-50 text-indigo-950 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-100 dark:border-indigo-800",
     order: 30
@@ -37,15 +45,19 @@ export const shiftDefinitions: ShiftDefinition[] = [
   {
     code: "-",
     label: "Saliente",
-    shortLabel: "S",
-    colorClassName: "bg-emerald-600 text-white border-emerald-600",
-    mutedColorClassName: "bg-emerald-50 text-emerald-950 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800",
+    shortLabel: "-",
+    backgroundColor: "#71717a",
+    foregroundColor: "#ffffff",
+    colorClassName: "bg-zinc-500 text-white border-zinc-500",
+    mutedColorClassName: "bg-zinc-100 text-zinc-800 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-600",
     order: 40
   },
   {
     code: "L",
     label: "Libre",
     shortLabel: "L",
+    backgroundColor: "#e4e4e7",
+    foregroundColor: "#18181b",
     colorClassName: "bg-zinc-200 text-zinc-950 border-zinc-200 dark:bg-zinc-700 dark:text-white dark:border-zinc-700",
     mutedColorClassName: "bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700",
     order: 50

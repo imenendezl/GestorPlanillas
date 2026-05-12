@@ -6,7 +6,13 @@ import { getRequestUserContext } from "@/lib/auth/session";
 import type { WorkRequest } from "@/types/domain";
 
 export async function listCurrentUserWorkRequests() {
-  const context = await getRequestUserContext();
+  let context;
+
+  try {
+    context = await getRequestUserContext();
+  } catch {
+    return [];
+  }
 
   if (!context) {
     return [];

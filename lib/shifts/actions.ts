@@ -5,11 +5,16 @@ import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/res
 import { getRequestUserContext } from "@/lib/auth/session";
 import { addDays, toDateKey } from "@/lib/utils/date";
 import { normalizeShiftCodes, parseBulkShiftSequence } from "@/lib/utils/shift";
-import { validateShift } from "@/lib/validation/shift-rules";
 import type { Shift, ShiftCode } from "@/types/domain";
 
 export async function listCurrentUserShifts() {
-  const context = await getRequestUserContext();
+  let context;
+
+  try {
+    context = await getRequestUserContext();
+  } catch {
+    return [];
+  }
 
   if (!context) {
     return [];
@@ -29,22 +34,6 @@ export async function listCurrentUserShifts() {
   })) satisfies Shift[];
 }
 
-async function validateForCurrentUser(date: string, shiftCodes: ShiftCode[]) {
-  const existingShifts = await listCurrentUserShifts();
-  const result = validateShift({
-    date,
-    shiftCodes,
-    existingShifts: existingShifts.map((shift) => ({
-      shiftDate: shift.shiftDate,
-      shiftCodes: shift.shiftCodes
-    }))
-  });
-
-  if (!result.valid) {
-    throw new Error(result.message);
-  }
-}
-
 export async function saveShiftAction(formData: FormData): Promise<ActionResult> {
   const context = await getRequestUserContext();
 
@@ -57,7 +46,6 @@ export async function saveShiftAction(formData: FormData): Promise<ActionResult>
 
   try {
     shiftCodes = normalizeShiftCodes(String(formData.get("shiftCodes") ?? "L"));
-    await validateForCurrentUser(shiftDate, shiftCodes);
   } catch (error) {
     return actionError(error instanceof Error ? error.message : "Turno no válido.");
   }
@@ -117,10 +105,6 @@ export async function bulkCreateShiftsAction(formData: FormData) {
 
   if (!context) {
     throw new Error("Debes iniciar sesión.");
-  }
-
-  for (let index = 0; index < sequence.length; index += 1) {
-    await validateForCurrentUser(toDateKey(addDays(startDate, index)), sequence[index]);
   }
 
   const rows = sequence.map((shiftCodes, index) => ({

@@ -1,0 +1,69 @@
+"use client";
+
+import Link from "next/link";
+import { CalendarDays, CloudOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MonthCalendar } from "@/components/calendar/month-calendar";
+import { QuickShiftWizard } from "@/components/calendar/quick-shift-wizard";
+import { SwapBoard } from "@/components/swaps/swap-board";
+import { Button } from "@/components/ui/button";
+import { readDashboardSnapshot, type DashboardSnapshot } from "@/lib/offline/client-store";
+import { SyncStatus } from "./sync-status";
+
+export function OfflineDashboard() {
+  const [snapshot, setSnapshot] = useState<DashboardSnapshot | null | undefined>(undefined);
+
+  useEffect(() => {
+    setSnapshot(readDashboardSnapshot());
+  }, []);
+
+  if (snapshot === undefined) {
+    return null;
+  }
+
+  if (!snapshot) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center gap-5 px-4 py-10">
+        <CloudOff className="h-8 w-8 text-muted-foreground" />
+        <div className="space-y-2">
+          <h1 className="font-display text-3xl font-semibold tracking-[-0.01em]">Sin conexión</h1>
+          <p className="text-muted-foreground">No hay una copia local del dashboard todavía. Abre la app una vez con internet para dejarla preparada.</p>
+        </div>
+        <Button asChild className="w-fit">
+          <Link href="/login">Ir al acceso</Link>
+        </Button>
+      </main>
+    );
+  }
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 border-b border-border bg-black text-white">
+        <div className="mx-auto flex h-11 max-w-6xl items-center justify-between px-4">
+          <div className="flex items-center gap-2 text-xs">
+            <CalendarDays className="h-4 w-4" />
+            Planillas
+          </div>
+          <div className="flex items-center gap-2 text-xs text-white/80">
+            <CloudOff className="h-4 w-4" />
+            Modo local
+          </div>
+          <SyncStatus />
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
+        <div className="space-y-8">
+          <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">{snapshot.profile.unit}</p>
+              <h1 className="font-display text-3xl font-semibold tracking-[-0.01em] sm:text-4xl">Hola, {snapshot.profile.firstName}</h1>
+            </div>
+            <QuickShiftWizard shifts={snapshot.shifts} />
+          </section>
+          <MonthCalendar shifts={snapshot.shifts} />
+          <SwapBoard requests={snapshot.swapRequests} />
+        </div>
+      </main>
+    </>
+  );
+}

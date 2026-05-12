@@ -1,10 +1,8 @@
-import { listVisibleSwapRequests } from "@/lib/swaps/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { SwapRequestCard } from "./swap-request-card";
+import type { SwapRequest } from "@/types/domain";
 
-export async function SwapBoard() {
-  const requests = await listVisibleSwapRequests();
-
+export function SwapBoard({ requests }: { requests: SwapRequest[] }) {
   return (
     <section className="space-y-4">
       <div>

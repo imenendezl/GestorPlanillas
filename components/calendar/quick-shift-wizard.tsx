@@ -1,77 +1,121 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { saveShiftForDateAction } from "@/lib/shifts/actions";
+import { saveShiftClientAction } from "@/lib/offline/client-actions";
+import { useOfflineShifts } from "@/lib/offline/use-offline-shifts";
 import { addDays, getMonthDays, spanishWeekdays, toDateKey } from "@/lib/utils/date";
 import { isValidShiftCombination, normalizeShiftCodes, shiftDefinitions, sortShiftCodes } from "@/lib/utils/shift";
+import { getShiftWarningsByDate } from "@/lib/validation/shift-warnings";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ShiftBadge } from "./shift-badge";
+import { ShiftCell } from "./shift-cell";
 import type { Shift, ShiftCode } from "@/types/domain";
+
+const DOUBLE_SHIFT_WINDOW_MS = 1400;
+const combinableShiftCodes = new Set<ShiftCode>(["M", "T", "N"]);
 
 export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initialDate?: Date; shifts: Shift[] }) {
   const [open, setOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [calendarMonth, setCalendarMonth] = useState(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
+  const [optimisticShiftCodes, setOptimisticShiftCodes] = useState<Record<string, ShiftCode[]>>({});
   const [selectedCodes, setSelectedCodes] = useState<ShiftCode[]>(["L"]);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  const lastQuickSelectionRef = useRef<{ at: number; dateKey: string; codes: ShiftCode[] } | null>(null);
   const dateKey = toDateKey(currentDate);
   const calendarDays = useMemo(() => getMonthDays(calendarMonth).days, [calendarMonth]);
-  const shiftsByDate = useMemo(() => new Map(shifts.map((shift) => [shift.shiftDate, shift])), [shifts]);
+  const visibleShifts = useOfflineShifts(shifts);
+  const shiftsByDate = useMemo(() => new Map(visibleShifts.map((shift) => [shift.shiftDate, shift])), [visibleShifts]);
+  const shiftCodesByDate = useMemo(() => {
+    const codesByDate = new Map(visibleShifts.map((shift) => [shift.shiftDate, shift.shiftCodes]));
+
+    Object.entries(optimisticShiftCodes).forEach(([shiftDate, shiftCodes]) => {
+      codesByDate.set(shiftDate, shiftCodes);
+    });
+
+    return codesByDate;
+  }, [optimisticShiftCodes, visibleShifts]);
+  const visibleShiftWarnings = useMemo(() => {
+    return getShiftWarningsByDate(
+      Array.from(shiftCodesByDate.entries()).map(([shiftDate, shiftCodes]) => ({
+        shiftDate,
+        shiftCodes
+      }))
+    );
+  }, [shiftCodesByDate]);
   const calendarMonthLabel = useMemo(
     () => new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(calendarMonth),
     [calendarMonth]
   );
-  const currentShift = shiftsByDate.get(dateKey);
+  const currentShiftCodes = shiftCodesByDate.get(dateKey);
 
   useEffect(() => {
-    setSelectedCodes(currentShift?.shiftCodes ?? ["L"]);
-  }, [currentShift, dateKey]);
+    setSelectedCodes(currentShiftCodes ?? ["L"]);
+  }, [currentShiftCodes, dateKey]);
 
-  function getNextCodes(code: ShiftCode) {
-    return ((currentCodes) => {
-      if (code === "L" || code === "-") {
-        return [code];
-      }
+  function saveCodesForDate(shiftDate: string, codes: ShiftCode[], onSuccess?: () => void) {
+    const normalizedCodes = normalizeShiftCodes(codes);
+    const shift = shiftsByDate.get(shiftDate);
+    const previousCodes = shiftCodesByDate.get(shiftDate);
 
-      const withoutPassiveCodes = currentCodes.filter((currentCode) => currentCode !== "L" && currentCode !== "-");
-      const nextCodes = withoutPassiveCodes.includes(code)
-        ? withoutPassiveCodes.filter((currentCode) => currentCode !== code)
-        : [...withoutPassiveCodes, code];
-      const normalizedCodes = nextCodes.length === 0 ? (["L"] as ShiftCode[]) : sortShiftCodes(nextCodes);
-
-      return isValidShiftCombination(normalizedCodes) ? normalizedCodes : currentCodes;
-    })(selectedCodes);
-  }
-
-  function saveCodesForCurrentDay(codes: ShiftCode[], onSuccess?: () => void) {
+    setOptimisticShiftCodes((current) => ({ ...current, [shiftDate]: normalizedCodes }));
     startTransition(async () => {
-      const result = await saveShiftForDateAction(dateKey, normalizeShiftCodes(codes));
+      const result = await saveShiftClientAction(shiftDate, normalizedCodes, shift);
 
       if (result.ok) {
+        if (result.message.startsWith("Sin conexión")) {
+          toast.info(result.message);
+        }
         onSuccess?.();
         return;
       }
 
       toast.error(result.message);
+      setOptimisticShiftCodes((current) => {
+        const next = { ...current };
+
+        if (previousCodes) {
+          next[shiftDate] = previousCodes;
+        } else {
+          delete next[shiftDate];
+        }
+
+        return next;
+      });
     });
   }
 
-  function toggleCode(code: ShiftCode) {
-    const nextCodes = getNextCodes(code);
+  function saveCodesForCurrentDay(codes: ShiftCode[], onSuccess?: () => void) {
+    saveCodesForDate(dateKey, codes, onSuccess);
+  }
+
+  function applyQuickCode(code: ShiftCode) {
+    const now = Date.now();
+    const lastQuickSelection = lastQuickSelectionRef.current;
+    const canCreateDoubleShift =
+      lastQuickSelection &&
+      lastQuickSelection.dateKey === dateKey &&
+      now - lastQuickSelection.at <= DOUBLE_SHIFT_WINDOW_MS &&
+      lastQuickSelection.codes.length === 1 &&
+      combinableShiftCodes.has(lastQuickSelection.codes[0]) &&
+      combinableShiftCodes.has(code) &&
+      lastQuickSelection.codes[0] !== code;
+    const candidateCodes = canCreateDoubleShift ? sortShiftCodes([lastQuickSelection.codes[0], code]) : [code];
+    const nextCodes = isValidShiftCombination(candidateCodes) ? candidateCodes : [code];
+
+    lastQuickSelectionRef.current = { at: now, dateKey, codes: nextCodes };
     setSelectedCodes(nextCodes);
     saveCodesForCurrentDay(nextCodes);
   }
 
   function moveDay(days: number) {
-    saveCodesForCurrentDay(selectedCodes, () => {
-      setCurrentDate((date) => {
-        const nextDate = addDays(date, days);
-        setCalendarMonth(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
-        return nextDate;
-      });
+    saveCodesForCurrentDay(selectedCodes);
+    setCurrentDate((date) => {
+      const nextDate = addDays(date, days);
+      setCalendarMonth(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+      return nextDate;
     });
   }
 
@@ -85,10 +129,9 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
   }
 
   function finishEntry() {
-    saveCodesForCurrentDay(selectedCodes, () => {
-      toast.success("Turnos guardados.");
-      setOpen(false);
-    });
+    saveCodesForCurrentDay(selectedCodes);
+    toast.success("Turnos guardados.");
+    setOpen(false);
   }
 
   return (
@@ -128,64 +171,80 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
                 const dayKey = toDateKey(day);
                 const selected = dayKey === dateKey;
                 const currentMonth = day.getMonth() === calendarMonth.getMonth();
-                const existingShift = shiftsByDate.get(dayKey);
+                const existingShiftCodes = shiftCodesByDate.get(dayKey);
+                const dayWarnings = visibleShiftWarnings.get(dayKey) ?? [];
 
                 return (
                   <button
                     className={[
-                      "flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-xl border px-0.5 py-1 text-sm transition active:scale-95",
-                      selected ? "border-primary bg-primary text-primary-foreground" : "border-transparent hover:border-primary",
-                      currentMonth ? "text-foreground" : "text-muted-foreground/45",
-                      selected && "text-primary-foreground"
+                      "h-12 min-w-0 rounded-lg transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
+                      selected && "ring-2 ring-emerald-600"
                     ]
                       .filter(Boolean)
                       .join(" ")}
                     key={dayKey}
-                    onClick={() => selectCalendarDay(day)}
+                    onClick={() => {
+                      dayWarnings.forEach((warning) => toast.warning(warning.message));
+                      selectCalendarDay(day);
+                    }}
                     type="button"
                   >
-                    <span>{day.getDate()}</span>
-                    {existingShift && <ShiftBadge className="max-w-full px-1 text-[9px] leading-none" codes={existingShift.shiftCodes} compact />}
+                    <ShiftCell
+                      className="min-h-12 rounded-lg p-1 text-xs sm:min-h-12"
+                      codes={existingShiftCodes}
+                      currentMonth={currentMonth}
+                      day={day.getDate()}
+                      selected={selected}
+                      warning={dayWarnings.length > 0}
+                    />
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button aria-label="Guardar y volver al día anterior" disabled={isPending} onClick={() => moveDay(-1)} size="icon" type="button" variant="outline">
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+            <Button
+              aria-label="Guardar y volver al día anterior"
+              className="h-14 w-full rounded-lg sm:h-16"
+              onClick={() => moveDay(-1)}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             {shiftDefinitions.map((definition) => {
-              const selected = selectedCodes.includes(definition.code);
-              const candidateCodes = getNextCodes(definition.code);
-              const disabled = !selected && !isValidShiftCombination(candidateCodes as ShiftCode[]);
-
               return (
                 <button
                   aria-label={definition.label}
                   className={[
-                    "flex h-11 min-w-0 flex-1 items-center justify-center rounded-full border text-sm font-semibold transition active:scale-95",
-                    selected ? definition.colorClassName : definition.mutedColorClassName,
-                    disabled && "cursor-not-allowed opacity-45"
+                    "flex h-14 w-full min-w-0 items-center justify-center rounded-lg border text-lg font-semibold transition active:scale-95 sm:h-16 sm:text-xl",
+                    definition.colorClassName
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  disabled={disabled}
                   key={definition.code}
-                  onClick={() => toggleCode(definition.code)}
+                  onClick={() => applyQuickCode(definition.code)}
                   type="button"
                 >
                   {definition.shortLabel}
                 </button>
               );
             })}
-            <Button aria-label="Guardar y pasar al día siguiente" disabled={isPending} onClick={() => moveDay(1)} size="icon" type="button" variant="outline">
+            <Button
+              aria-label="Guardar y pasar al día siguiente"
+              className="h-14 w-full rounded-lg sm:h-16"
+              onClick={() => moveDay(1)}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          <Button className="mt-auto w-full" disabled={isPending} onClick={finishEntry} type="button">
+          <Button className="mt-auto w-full" onClick={finishEntry} type="button">
             Terminar
           </Button>
         </div>
