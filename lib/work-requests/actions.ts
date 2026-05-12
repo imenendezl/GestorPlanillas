@@ -2,27 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestUserContext } from "@/lib/auth/session";
 import type { WorkRequest } from "@/types/domain";
 
-async function getUserId() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
-}
-
 export async function listCurrentUserWorkRequests() {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
 
-  if (!userId) {
+  if (!context) {
     return [];
   }
 
-  const { data } = await supabase
+  const { data } = await context.db
     .from("work_requests")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", context.userId)
     .order("request_date", { ascending: true });
 
   return (data ?? []).map((request) => ({
@@ -34,15 +27,14 @@ export async function listCurrentUserWorkRequests() {
 }
 
 export async function createWorkRequestAction(requestDate: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
 
-  if (!userId) {
+  if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
-  const { error } = await supabase.from("work_requests").upsert({
-    user_id: userId,
+  const { error } = await context.db.from("work_requests").upsert({
+    user_id: context.userId,
     request_date: requestDate,
     status: "Open"
   });

@@ -2,30 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestUserContext } from "@/lib/auth/session";
 import { addDays, toDateKey } from "@/lib/utils/date";
 import { normalizeShiftCodes, parseBulkShiftSequence } from "@/lib/utils/shift";
 import { validateShift } from "@/lib/validation/shift-rules";
 import type { Shift, ShiftCode } from "@/types/domain";
 
-async function getUserId() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
-}
-
 export async function listCurrentUserShifts() {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
 
-  if (!userId) {
+  if (!context) {
     return [];
   }
 
-  const { data } = await supabase
+  const { data } = await context.db
     .from("shifts")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", context.userId)
     .order("shift_date", { ascending: true });
 
   return (data ?? []).map((shift) => ({
@@ -53,10 +46,9 @@ async function validateForCurrentUser(date: string, shiftCodes: ShiftCode[]) {
 }
 
 export async function saveShiftAction(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
 
-  if (!userId) {
+  if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
@@ -70,11 +62,16 @@ export async function saveShiftAction(formData: FormData): Promise<ActionResult>
     return actionError(error instanceof Error ? error.message : "Turno no válido.");
   }
 
-  const { error } = await supabase.from("shifts").upsert({
-    user_id: userId,
-    shift_date: shiftDate,
-    shift_codes: shiftCodes
-  });
+  const { error } = await context.db
+    .from("shifts")
+    .upsert(
+      {
+        user_id: context.userId,
+        shift_date: shiftDate,
+        shift_codes: shiftCodes
+      },
+      { onConflict: "user_id,shift_date" }
+    );
 
   if (error) {
     return actionError("No se pudo guardar el turno.");
@@ -92,19 +89,18 @@ export async function saveShiftForDateAction(shiftDate: string, shiftCodes: Shif
 }
 
 export async function deleteShiftAction(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
   const shiftId = String(formData.get("shiftId"));
 
-  if (!userId) {
+  if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
-  const { error } = await supabase
+  const { error } = await context.db
     .from("shifts")
     .delete()
     .eq("id", shiftId)
-    .eq("user_id", userId);
+    .eq("user_id", context.userId);
 
   if (error) {
     return actionError("No se pudo eliminar el turno.");
@@ -115,12 +111,11 @@ export async function deleteShiftAction(formData: FormData): Promise<ActionResul
 }
 
 export async function bulkCreateShiftsAction(formData: FormData) {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
   const startDate = new Date(`${String(formData.get("startDate"))}T00:00:00`);
   const sequence = parseBulkShiftSequence(String(formData.get("sequence") ?? ""));
 
-  if (!userId) {
+  if (!context) {
     throw new Error("Debes iniciar sesión.");
   }
 
@@ -129,12 +124,12 @@ export async function bulkCreateShiftsAction(formData: FormData) {
   }
 
   const rows = sequence.map((shiftCodes, index) => ({
-    user_id: userId,
+    user_id: context.userId,
     shift_date: toDateKey(addDays(startDate, index)),
     shift_codes: shiftCodes
   }));
 
-  const { error } = await supabase.from("shifts").upsert(rows);
+  const { error } = await context.db.from("shifts").upsert(rows, { onConflict: "user_id,shift_date" });
 
   if (error) {
     throw new Error(error.message);

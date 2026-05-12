@@ -2,18 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestUserContext } from "@/lib/auth/session";
 import type { SwapRequest } from "@/types/domain";
 
-async function getUserId() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
-}
-
 export async function listVisibleSwapRequests() {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const context = await getRequestUserContext();
+
+  if (!context) {
+    return [];
+  }
+
+  const { data } = await context.db
     .from("swap_requests")
     .select("*")
     .eq("status", "Open")
@@ -31,8 +30,7 @@ export async function listVisibleSwapRequests() {
 }
 
 export async function createSwapRequestAction(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
   const shiftId = String(formData.get("shiftId"));
   const offeredShiftCodes = String(formData.get("offeredShiftCodes")).split("+");
   const proposedDates = String(formData.get("proposedDates") ?? "")
@@ -40,12 +38,12 @@ export async function createSwapRequestAction(formData: FormData): Promise<Actio
     .map((date) => date.trim())
     .filter(Boolean);
 
-  if (!userId) {
+  if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
-  const { error } = await supabase.from("swap_requests").insert({
-    requester_id: userId,
+  const { error } = await context.db.from("swap_requests").insert({
+    requester_id: context.userId,
     shift_id: shiftId,
     offered_shift_codes: offeredShiftCodes,
     proposed_dates: proposedDates
@@ -60,17 +58,16 @@ export async function createSwapRequestAction(formData: FormData): Promise<Actio
 }
 
 export async function acceptSwapRequestAction(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const userId = await getUserId();
+  const context = await getRequestUserContext();
   const requestId = String(formData.get("requestId"));
 
-  if (!userId) {
+  if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
-  const { error } = await supabase
+  const { error } = await context.db
     .from("swap_requests")
-    .update({ status: "Accepted", accepted_by: userId })
+    .update({ status: "Accepted", accepted_by: context.userId })
     .eq("id", requestId)
     .eq("status", "Open");
 

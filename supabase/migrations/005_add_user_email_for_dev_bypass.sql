@@ -1,3 +1,18 @@
+alter table public.users
+add column if not exists email text;
+
+update public.users as profile
+set email = lower(auth_user.email)
+from auth.users as auth_user
+where profile.id = auth_user.id
+  and profile.email is null;
+
+create unique index if not exists users_email_unique_idx
+on public.users (email);
+
+alter table public.users
+alter column email set not null;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -30,8 +45,3 @@ begin
   return new;
 end;
 $$;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-after insert on auth.users
-for each row execute function public.handle_new_user();

@@ -30,7 +30,13 @@ export function TopNav({ profile }: { profile: UserProfile | null }) {
           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button aria-label="Abrir menú" size="icon" type="button" variant="utility">
+              <Button
+                aria-label="Abrir menú"
+                className="border border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                size="icon"
+                type="button"
+                variant="outline"
+              >
                 <Menu className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

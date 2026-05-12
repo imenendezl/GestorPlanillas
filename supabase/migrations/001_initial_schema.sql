@@ -16,6 +16,7 @@ create table public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   first_name text not null,
   last_name text not null,
+  email text not null unique,
   unit text not null references public.units(name),
   position public.user_position not null,
   role public.user_role not null default 'Employee',
@@ -106,11 +107,12 @@ begin
   values (requested_unit)
   on conflict (name) do nothing;
 
-  insert into public.users (id, first_name, last_name, unit, position, role)
+  insert into public.users (id, first_name, last_name, email, unit, position, role)
   values (
     new.id,
     coalesce(nullif(new.raw_user_meta_data ->> 'firstName', ''), ''),
     coalesce(nullif(new.raw_user_meta_data ->> 'lastName', ''), ''),
+    lower(new.email),
     requested_unit,
     requested_position,
     'Employee'

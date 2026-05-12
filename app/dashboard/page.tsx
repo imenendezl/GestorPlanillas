@@ -16,7 +16,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted-foreground">{profile?.unit}</p>
             <h1 className="font-display text-3xl font-semibold tracking-[-0.01em] sm:text-4xl">Hola, {profile?.firstName}</h1>
           </div>
-          <QuickShiftWizard />
+          <QuickShiftWizard shifts={shifts} />
         </section>
         <MonthCalendar shifts={shifts} />
         <SwapBoard />

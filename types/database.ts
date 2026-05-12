@@ -23,6 +23,7 @@ export type Database = {
           id: string;
           first_name: string;
           last_name: string;
+          email: string;
           unit: string;
           position: Position;
           role: UserRole;
@@ -33,6 +34,7 @@ export type Database = {
           id: string;
           first_name: string;
           last_name: string;
+          email: string;
           unit: string;
           position: Position;
           role?: UserRole;
@@ -42,6 +44,7 @@ export type Database = {
         Update: Partial<{
           first_name: string;
           last_name: string;
+          email: string;
           unit: string;
           position: Position;
           role: UserRole;
