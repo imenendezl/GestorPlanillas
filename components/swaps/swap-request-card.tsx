@@ -32,8 +32,8 @@ export function SwapRequestCard({ request }: { request: SwapRequest }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Turno ofrecido</p>
-          <h3 className="mt-1 font-display text-xl font-semibold tracking-[-0.01em]">{formatShiftCodes(request.offeredShiftCodes)}</h3>
-          <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+          <h3 className="mt-1 font-display text-xl font-semibold">{formatShiftCodes(request.offeredShiftCodes)}</h3>
+          <p className="mt-2 text-sm text-black/65 dark:text-white/70">
             {request.proposedDates.length > 0 ? `Propone: ${request.proposedDates.join(", ")}` : "Sin días propuestos"}
           </p>
         </div>

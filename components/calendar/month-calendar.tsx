@@ -61,6 +61,10 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
       }))
     );
   }, [shiftCodesByDate]);
+  const dayLabelFormatter = useMemo(
+    () => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" }),
+    []
+  );
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
     return Array.from({ length: 11 }, (_, index) => currentYear - 5 + index);
@@ -207,9 +211,11 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
             const dayWarnings = warningsByDate.get(dateKey) ?? [];
             const isCurrentMonth = day.getMonth() === activeDate.getMonth();
             const selected = dateKey === selectedDate;
+            const ariaLabel = dayLabelFormatter.format(day);
 
             return (
               <button
+                aria-label={`${ariaLabel}${shiftCodes ? `, turno ${shiftCodes.join(" + ")}` : ", sin turno"}`}
                 className={[
                   "min-h-14 min-w-0 rounded-lg text-left transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-16 lg:min-h-[4.5rem]",
                   selected && "ring-2 ring-emerald-600"

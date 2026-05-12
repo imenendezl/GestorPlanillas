@@ -63,7 +63,7 @@ export function LoginForm({
           </Button>
         </form>
       )}
-      <p className="text-center text-sm text-black/60 dark:text-white/60">
+      <p className="text-center text-sm text-black/65 dark:text-white/70">
         ¿Aún no tienes cuenta?{" "}
         <Link className="text-action" href="/register">
           Crear cuenta

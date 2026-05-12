@@ -63,7 +63,7 @@ export function RegisterForm({ error, units }: { error?: string; units: string[]
       <Button className="w-full" type="submit">
         Crear cuenta
       </Button>
-      <p className="text-center text-sm text-black/60 dark:text-white/60">
+      <p className="text-center text-sm text-black/65 dark:text-white/70">
         ¿Ya tienes cuenta?{" "}
         <Link className="text-action" href="/login">
           Entrar

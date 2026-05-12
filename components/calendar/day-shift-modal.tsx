@@ -121,6 +121,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
                 <p className="text-sm text-muted-foreground">
                   Turno actual: <span className="font-semibold text-foreground">{formatShiftCodes(shift.shiftCodes)}</span>
                 </p>
+                <label className="sr-only" htmlFor="proposedDates">Días propuestos</label>
                 <Input id="proposedDates" placeholder="Días propuestos: 2026-05-18, 2026-05-20" />
                 <Button
                   disabled={isPending}

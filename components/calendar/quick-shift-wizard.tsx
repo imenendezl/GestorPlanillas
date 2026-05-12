@@ -49,6 +49,10 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
     () => new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(calendarMonth),
     [calendarMonth]
   );
+  const dayLabelFormatter = useMemo(
+    () => new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" }),
+    []
+  );
   const currentShiftCodes = shiftCodesByDate.get(dateKey);
 
   useEffect(() => {
@@ -150,16 +154,16 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
           <div className="rounded-apple border bg-card p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
               <Button aria-label="Mes anterior" onClick={() => moveCalendarMonth(-1)} size="icon" type="button" variant="outline">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <p className="text-sm font-semibold capitalize">{calendarMonthLabel}</p>
+              <p className="min-w-0 text-center text-sm font-semibold capitalize leading-tight">{calendarMonthLabel}</p>
               <Button aria-label="Mes siguiente" onClick={() => moveCalendarMonth(1)} size="icon" type="button" variant="outline">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-muted-foreground">
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold leading-tight text-muted-foreground">
               {spanishWeekdays.map((weekday) => (
                 <div className="py-1" key={weekday}>
                   {weekday}
@@ -173,11 +177,13 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
                 const currentMonth = day.getMonth() === calendarMonth.getMonth();
                 const existingShiftCodes = shiftCodesByDate.get(dayKey);
                 const dayWarnings = visibleShiftWarnings.get(dayKey) ?? [];
+                const ariaLabel = dayLabelFormatter.format(day);
 
                 return (
                   <button
+                    aria-label={`${ariaLabel}${existingShiftCodes ? `, turno ${existingShiftCodes.join(" + ")}` : ", sin turno"}`}
                     className={[
-                      "h-12 min-w-0 rounded-lg transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
+                      "min-h-12 min-w-0 rounded-lg transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
                       selected && "ring-2 ring-emerald-600"
                     ]
                       .filter(Boolean)
@@ -206,7 +212,7 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
           <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
             <Button
               aria-label="Guardar y volver al día anterior"
-              className="h-14 w-full rounded-lg sm:h-16"
+              className="min-h-14 w-full rounded-lg sm:min-h-16"
               onClick={() => moveDay(-1)}
               size="icon"
               type="button"
@@ -219,7 +225,7 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
                 <button
                   aria-label={definition.label}
                   className={[
-                    "flex h-14 w-full min-w-0 items-center justify-center rounded-lg border text-lg font-semibold transition active:scale-95 sm:h-16 sm:text-xl",
+                    "flex min-h-14 w-full min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-lg font-semibold leading-none transition active:scale-95 sm:min-h-16 sm:text-xl",
                     definition.colorClassName
                   ]
                     .filter(Boolean)
@@ -234,7 +240,7 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
             })}
             <Button
               aria-label="Guardar y pasar al día siguiente"
-              className="h-14 w-full rounded-lg sm:h-16"
+              className="min-h-14 w-full rounded-lg sm:min-h-16"
               onClick={() => moveDay(1)}
               size="icon"
               type="button"

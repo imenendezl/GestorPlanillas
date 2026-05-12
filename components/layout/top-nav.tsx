@@ -31,7 +31,7 @@ export function TopNav({ profile, shifts = [] }: { profile: UserProfile | null; 
           <ThemeToggle />
           {profile && (
             <form action={signOutAction}>
-              <Button className="h-10 px-4 text-sm" type="submit" variant="utility">
+              <Button className="min-h-11 px-4 text-sm" type="submit" variant="utility">
                 Salir
               </Button>
             </form>
