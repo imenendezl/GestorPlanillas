@@ -48,7 +48,7 @@ export async function signUpAction(formData: FormData) {
     redirect("/register?error=No%20se%20pudo%20crear%20la%20cuenta");
   }
 
-  redirect(data.session ? "/dashboard" : "/login?error=Cuenta%20creada.%20Revisa%20tu%20correo%20si%20Supabase%20pide%20confirmaci%C3%B3n.");
+  redirect(data.session ? "/dashboard" : "/login?message=Cuenta%20creada.%20Revisa%20tu%20correo%20si%20Supabase%20pide%20confirmaci%C3%B3n.");
 }
 
 export async function signOutAction() {

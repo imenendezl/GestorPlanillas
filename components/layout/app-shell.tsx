@@ -16,7 +16,7 @@ export async function AppShell({ children, allowedRoles }: { children: React.Rea
   return (
     <>
       <TopNav profile={profile} />
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">{children}</main>
     </>
   );
 }

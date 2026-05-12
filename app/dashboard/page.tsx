@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
-import { BulkShiftEntry } from "@/components/calendar/bulk-shift-entry";
 import { MonthCalendar } from "@/components/calendar/month-calendar";
+import { QuickShiftWizard } from "@/components/calendar/quick-shift-wizard";
 import { SwapBoard } from "@/components/swaps/swap-board";
 import { getCurrentProfile } from "@/lib/auth/actions";
 import { listCurrentUserShifts } from "@/lib/shifts/actions";
@@ -11,11 +11,13 @@ export default async function DashboardPage() {
   return (
     <AppShell>
       <div className="space-y-8">
-        <section>
-          <p className="text-sm text-black/55 dark:text-white/55">{profile?.unit}</p>
-          <h1 className="font-display text-4xl font-semibold tracking-[-0.01em]">Hola, {profile?.firstName}</h1>
+        <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">{profile?.unit}</p>
+            <h1 className="font-display text-3xl font-semibold tracking-[-0.01em] sm:text-4xl">Hola, {profile?.firstName}</h1>
+          </div>
+          <QuickShiftWizard />
         </section>
-        <BulkShiftEntry />
         <MonthCalendar shifts={shifts} />
         <SwapBoard />
       </div>

@@ -1,4 +1,4 @@
-import type { Position, ShiftCode, SwapStatus, UserRole } from "./domain";
+import type { Position, ShiftCode, SwapStatus, UserRole, WorkRequestStatus } from "./domain";
 
 export type Database = {
   public: {
@@ -100,6 +100,28 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      work_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          request_date: string;
+          status: WorkRequestStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          request_date: string;
+          status?: WorkRequestStatus;
+        };
+        Update: Partial<{
+          request_date: string;
+          status: WorkRequestStatus;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -107,6 +129,7 @@ export type Database = {
       user_position: Position;
       user_role: UserRole;
       swap_status: SwapStatus;
+      work_request_status: WorkRequestStatus;
     };
     CompositeTypes: Record<string, never>;
   };

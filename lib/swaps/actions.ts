@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
 import { createClient } from "@/lib/supabase/server";
 import type { SwapRequest } from "@/types/domain";
 
@@ -29,7 +30,7 @@ export async function listVisibleSwapRequests() {
   })) satisfies SwapRequest[];
 }
 
-export async function createSwapRequestAction(formData: FormData) {
+export async function createSwapRequestAction(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const userId = await getUserId();
   const shiftId = String(formData.get("shiftId"));
@@ -40,7 +41,7 @@ export async function createSwapRequestAction(formData: FormData) {
     .filter(Boolean);
 
   if (!userId) {
-    throw new Error("Debes iniciar sesión.");
+    return actionError("Debes iniciar sesión.");
   }
 
   const { error } = await supabase.from("swap_requests").insert({
@@ -51,19 +52,20 @@ export async function createSwapRequestAction(formData: FormData) {
   });
 
   if (error) {
-    throw new Error(error.message);
+    return actionError("No se pudo pedir quitarte ese turno.");
   }
 
   revalidatePath("/dashboard");
+  return actionSuccess("Solicitud publicada.");
 }
 
-export async function acceptSwapRequestAction(formData: FormData) {
+export async function acceptSwapRequestAction(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const userId = await getUserId();
   const requestId = String(formData.get("requestId"));
 
   if (!userId) {
-    throw new Error("Debes iniciar sesión.");
+    return actionError("Debes iniciar sesión.");
   }
 
   const { error } = await supabase
@@ -73,8 +75,9 @@ export async function acceptSwapRequestAction(formData: FormData) {
     .eq("status", "Open");
 
   if (error) {
-    throw new Error(error.message);
+    return actionError("No se pudo aceptar el cambio.");
   }
 
   revalidatePath("/dashboard");
+  return actionSuccess("Cambio aceptado.");
 }

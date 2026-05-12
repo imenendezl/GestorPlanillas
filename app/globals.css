@@ -3,6 +3,31 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
   --color-action: #0066cc;
   --color-actionFocus: #0071e3;
   --color-skyLink: #2997ff;
@@ -14,26 +39,105 @@
   --font-sans: "SF Pro Text", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "SF Pro Display", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --radius-apple: 18px;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
 :root {
   color-scheme: light;
+  --background: 240 11% 96%;
+  --foreground: 240 3% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 3% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 3% 12%;
+  --primary: 210 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 8% 94%;
+  --secondary-foreground: 240 3% 12%;
+  --muted: 240 8% 94%;
+  --muted-foreground: 240 4% 44%;
+  --accent: 210 100% 96%;
+  --accent-foreground: 210 100% 32%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 6% 88%;
+  --input: 240 6% 88%;
+  --ring: 210 100% 45%;
+  --success: 154 62% 35%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 48%;
+  --warning-foreground: 240 3% 12%;
+  --info: 210 100% 40%;
+  --info-foreground: 0 0% 100%;
+  --radius: 18px;
 }
 
 .dark {
   color-scheme: dark;
+  --background: 240 3% 15%;
+  --foreground: 0 0% 100%;
+  --card: 240 3% 13%;
+  --card-foreground: 0 0% 100%;
+  --popover: 240 3% 13%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 211 100% 58%;
+  --primary-foreground: 240 3% 12%;
+  --secondary: 240 4% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 4% 20%;
+  --muted-foreground: 240 5% 72%;
+  --accent: 211 100% 18%;
+  --accent-foreground: 211 100% 78%;
+  --destructive: 0 63% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5% 26%;
+  --input: 240 5% 26%;
+  --ring: 211 100% 58%;
+  --success: 154 55% 42%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 56%;
+  --warning-foreground: 240 3% 12%;
+  --info: 211 100% 58%;
+  --info-foreground: 240 3% 12%;
+}
+
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
   min-height: 100vh;
-  background: #f5f5f7;
-  color: #1d1d1f;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-size: 17px;
   line-height: 1.47;
   letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .dark body {
-  background: #272729;
-  color: #ffffff;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-height: 1.5em;
+  text-align: left;
 }

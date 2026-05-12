@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, toDateKey } from "@/lib/utils/date";
 import { normalizeShiftCodes, parseBulkShiftSequence } from "@/lib/utils/shift";
@@ -51,18 +52,23 @@ async function validateForCurrentUser(date: string, shiftCodes: ShiftCode[]) {
   }
 }
 
-export async function saveShiftAction(formData: FormData) {
+export async function saveShiftAction(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const userId = await getUserId();
 
   if (!userId) {
-    throw new Error("Debes iniciar sesión.");
+    return actionError("Debes iniciar sesión.");
   }
 
   const shiftDate = String(formData.get("shiftDate"));
-  const shiftCodes = normalizeShiftCodes(String(formData.get("shiftCodes") ?? "L"));
+  let shiftCodes: ShiftCode[];
 
-  await validateForCurrentUser(shiftDate, shiftCodes);
+  try {
+    shiftCodes = normalizeShiftCodes(String(formData.get("shiftCodes") ?? "L"));
+    await validateForCurrentUser(shiftDate, shiftCodes);
+  } catch (error) {
+    return actionError(error instanceof Error ? error.message : "Turno no válido.");
+  }
 
   const { error } = await supabase.from("shifts").upsert({
     user_id: userId,
@@ -71,19 +77,27 @@ export async function saveShiftAction(formData: FormData) {
   });
 
   if (error) {
-    throw new Error(error.message);
+    return actionError("No se pudo guardar el turno.");
   }
 
   revalidatePath("/dashboard");
+  return actionSuccess("Turno guardado.");
 }
 
-export async function deleteShiftAction(formData: FormData) {
+export async function saveShiftForDateAction(shiftDate: string, shiftCodes: ShiftCode[]): Promise<ActionResult> {
+  const formData = new FormData();
+  formData.set("shiftDate", shiftDate);
+  formData.set("shiftCodes", shiftCodes.join("+"));
+  return saveShiftAction(formData);
+}
+
+export async function deleteShiftAction(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const userId = await getUserId();
   const shiftId = String(formData.get("shiftId"));
 
   if (!userId) {
-    throw new Error("Debes iniciar sesión.");
+    return actionError("Debes iniciar sesión.");
   }
 
   const { error } = await supabase
@@ -93,10 +107,11 @@ export async function deleteShiftAction(formData: FormData) {
     .eq("user_id", userId);
 
   if (error) {
-    throw new Error(error.message);
+    return actionError("No se pudo eliminar el turno.");
   }
 
   revalidatePath("/dashboard");
+  return actionSuccess("Turno eliminado.");
 }
 
 export async function bulkCreateShiftsAction(formData: FormData) {

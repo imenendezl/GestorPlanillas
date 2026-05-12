@@ -1,6 +1,6 @@
 import { LoginForm } from "@/components/auth/login-form";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
   const params = await searchParams;
 
   return (
@@ -9,7 +9,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <h1 className="font-display text-4xl font-semibold tracking-[-0.01em]">Entrar</h1>
         <p className="mt-2 text-[15px] text-black/60 dark:text-white/60">Accede a tus planillas y cambios de turno.</p>
         <div className="mt-8">
-          <LoginForm error={params.error} />
+          <LoginForm error={params.error} message={params.message} />
         </div>
       </section>
     </main>

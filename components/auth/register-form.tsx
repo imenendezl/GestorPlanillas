@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { signUpAction } from "@/lib/auth/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function RegisterForm({ error, units }: { error?: string; units: string[] }) {
   const defaultUnit = units.includes("Urgencias") ? "Urgencias" : units[0];
@@ -21,18 +23,28 @@ export function RegisterForm({ error, units }: { error?: string; units: string[]
       <div>
         <label className="mb-2 block text-sm font-semibold">Unidad/Servicio</label>
         <Select name="unit" required defaultValue={defaultUnit}>
-          {units.map((unit) => (
-            <option key={unit} value={unit}>
-              {unit}
-            </option>
-          ))}
+          <SelectTrigger>
+            <SelectValue placeholder="Selecciona unidad" />
+          </SelectTrigger>
+          <SelectContent>
+            {units.map((unit) => (
+              <SelectItem key={unit} value={unit}>
+                {unit}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </div>
       <div>
         <label className="mb-2 block text-sm font-semibold">Categoría profesional</label>
         <Select name="position" required defaultValue="Nurse">
-          <option value="Nurse">Enfermera/o</option>
-          <option value="TMSCAE">TMSCAE</option>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecciona categoría" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Nurse">Enfermera/o</SelectItem>
+            <SelectItem value="TMSCAE">TMSCAE</SelectItem>
+          </SelectContent>
         </Select>
       </div>
       <div>
@@ -43,7 +55,11 @@ export function RegisterForm({ error, units }: { error?: string; units: string[]
         <label className="mb-2 block text-sm font-semibold">Contraseña</label>
         <Input minLength={6} name="password" required type="password" />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert variant="error">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <Button className="w-full" type="submit">
         Crear cuenta
       </Button>

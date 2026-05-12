@@ -1,6 +1,7 @@
 create type public.user_position as enum ('Nurse', 'TMSCAE');
 create type public.user_role as enum ('Admin', 'Supervisor', 'Employee');
 create type public.swap_status as enum ('Open', 'Accepted', 'Cancelled');
+create type public.work_request_status as enum ('Open', 'Cancelled', 'Approved', 'Rejected');
 
 create table public.units (
   name text primary key,
@@ -58,9 +59,21 @@ create table public.swap_requests (
   updated_at timestamptz not null default now()
 );
 
+create table public.work_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  request_date date not null,
+  status public.work_request_status not null default 'Open',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, request_date, status)
+);
+
 create index users_unit_position_idx on public.users (unit, position);
 create index shifts_user_date_idx on public.shifts (user_id, shift_date);
 create index swap_requests_status_idx on public.swap_requests (status);
+create index work_requests_user_date_idx on public.work_requests (user_id, request_date);
+create index work_requests_status_idx on public.work_requests (status);
 
 create or replace function public.touch_updated_at()
 returns trigger
@@ -120,6 +133,10 @@ create trigger swap_requests_touch_updated_at
 before update on public.swap_requests
 for each row execute function public.touch_updated_at();
 
+create trigger work_requests_touch_updated_at
+before update on public.work_requests
+for each row execute function public.touch_updated_at();
+
 create or replace function public.current_user_role()
 returns public.user_role
 language sql
@@ -162,6 +179,7 @@ alter table public.users enable row level security;
 alter table public.units enable row level security;
 alter table public.shifts enable row level security;
 alter table public.swap_requests enable row level security;
+alter table public.work_requests enable row level security;
 
 create policy "Anyone can read units"
 on public.units for select
@@ -243,3 +261,20 @@ with check (
 create policy "Users can delete own swap requests"
 on public.swap_requests for delete
 using (requester_id = auth.uid());
+
+create policy "Users can read own work requests"
+on public.work_requests for select
+using (user_id = auth.uid());
+
+create policy "Managers can read work requests"
+on public.work_requests for select
+using (public.can_manage_roles());
+
+create policy "Users can create own work requests"
+on public.work_requests for insert
+with check (user_id = auth.uid());
+
+create policy "Users can cancel own work requests"
+on public.work_requests for update
+using (user_id = auth.uid())
+with check (user_id = auth.uid() and status = 'Cancelled');
