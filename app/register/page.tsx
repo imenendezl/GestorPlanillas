@@ -1,7 +1,8 @@
 import { RegisterForm } from "@/components/auth/register-form";
+import { listUnits } from "@/lib/units/actions";
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const params = await searchParams;
+  const [params, units] = await Promise.all([searchParams, listUnits()]);
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -9,7 +10,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         <h1 className="font-display text-4xl font-semibold tracking-[-0.01em]">Crear cuenta</h1>
         <p className="mt-2 text-[15px] text-black/60 dark:text-white/60">El rol inicial será empleado. Supervisión se concede después por personal autorizado.</p>
         <div className="mt-8">
-          <RegisterForm error={params.error} />
+          <RegisterForm error={params.error} units={units} />
         </div>
       </section>
     </main>

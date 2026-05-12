@@ -2,11 +2,20 @@ create type public.user_position as enum ('Nurse', 'TMSCAE');
 create type public.user_role as enum ('Admin', 'Supervisor', 'Employee');
 create type public.swap_status as enum ('Open', 'Accepted', 'Cancelled');
 
+create table public.units (
+  name text primary key,
+  created_at timestamptz not null default now()
+);
+
+insert into public.units (name)
+values ('Urgencias')
+on conflict (name) do nothing;
+
 create table public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   first_name text not null,
   last_name text not null,
-  unit text not null,
+  unit text not null references public.units(name),
   position public.user_position not null,
   role public.user_role not null default 'Employee',
   created_at timestamptz not null default now(),
@@ -67,6 +76,42 @@ create trigger users_touch_updated_at
 before update on public.users
 for each row execute function public.touch_updated_at();
 
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  requested_unit text;
+  requested_position public.user_position;
+begin
+  requested_unit := coalesce(nullif(new.raw_user_meta_data ->> 'unit', ''), 'Urgencias');
+  requested_position := coalesce(nullif(new.raw_user_meta_data ->> 'position', '')::public.user_position, 'Nurse');
+
+  insert into public.units (name)
+  values (requested_unit)
+  on conflict (name) do nothing;
+
+  insert into public.users (id, first_name, last_name, unit, position, role)
+  values (
+    new.id,
+    coalesce(nullif(new.raw_user_meta_data ->> 'firstName', ''), ''),
+    coalesce(nullif(new.raw_user_meta_data ->> 'lastName', ''), ''),
+    requested_unit,
+    requested_position,
+    'Employee'
+  )
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
 create trigger shifts_touch_updated_at
 before update on public.shifts
 for each row execute function public.touch_updated_at();
@@ -114,8 +159,13 @@ as $$
 $$;
 
 alter table public.users enable row level security;
+alter table public.units enable row level security;
 alter table public.shifts enable row level security;
 alter table public.swap_requests enable row level security;
+
+create policy "Anyone can read units"
+on public.units for select
+using (true);
 
 create policy "Users can insert own employee profile"
 on public.users for insert

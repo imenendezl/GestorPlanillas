@@ -3,6 +3,21 @@ import type { Position, ShiftCode, SwapStatus, UserRole } from "./domain";
 export type Database = {
   public: {
     Tables: {
+      units: {
+        Row: {
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          name: string;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
       users: {
         Row: {
           id: string;

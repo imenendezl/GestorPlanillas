@@ -48,20 +48,7 @@ export async function signUpAction(formData: FormData) {
     redirect("/register?error=No%20se%20pudo%20crear%20la%20cuenta");
   }
 
-  const { error: profileError } = await supabase.from("users").insert({
-    id: data.user.id,
-    first_name: firstName,
-    last_name: lastName,
-    unit,
-    position,
-    role: "Employee"
-  });
-
-  if (profileError) {
-    redirect("/register?error=La%20cuenta%20se%20cre%C3%B3%2C%20pero%20falt%C3%B3%20el%20perfil");
-  }
-
-  redirect("/dashboard");
+  redirect(data.session ? "/dashboard" : "/login?error=Cuenta%20creada.%20Revisa%20tu%20correo%20si%20Supabase%20pide%20confirmaci%C3%B3n.");
 }
 
 export async function signOutAction() {

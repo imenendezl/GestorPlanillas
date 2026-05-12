@@ -3,7 +3,9 @@ import { signUpAction } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 
-export function RegisterForm({ error }: { error?: string }) {
+export function RegisterForm({ error, units }: { error?: string; units: string[] }) {
+  const defaultUnit = units.includes("Urgencias") ? "Urgencias" : units[0];
+
   return (
     <form action={signUpAction} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -18,7 +20,13 @@ export function RegisterForm({ error }: { error?: string }) {
       </div>
       <div>
         <label className="mb-2 block text-sm font-semibold">Unidad/Servicio</label>
-        <Input name="unit" placeholder="UCI, Urgencias, Planta..." required />
+        <Select name="unit" required defaultValue={defaultUnit}>
+          {units.map((unit) => (
+            <option key={unit} value={unit}>
+              {unit}
+            </option>
+          ))}
+        </Select>
       </div>
       <div>
         <label className="mb-2 block text-sm font-semibold">Categoría profesional</label>
