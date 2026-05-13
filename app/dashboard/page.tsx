@@ -5,13 +5,16 @@ import { OfflineDashboard } from "@/components/offline/offline-dashboard";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/actions";
 import { listCurrentUserShifts } from "@/lib/shifts/actions";
-import { listVisibleSwapRequests } from "@/lib/swaps/actions";
+import { listSignaturePendingSwapRequests, listVisibleSwapRequests } from "@/lib/swaps/actions";
+import { listVisibleWorkRequests } from "@/lib/work-requests/actions";
 
 export default async function DashboardPage() {
-  const [profileResult, shiftsResult, swapsResult] = await Promise.allSettled([
+  const [profileResult, shiftsResult, swapsResult, workRequestsResult, signatureRequestsResult] = await Promise.allSettled([
     getCurrentProfile(),
     listCurrentUserShifts(),
-    listVisibleSwapRequests()
+    listVisibleSwapRequests(),
+    listVisibleWorkRequests(),
+    listSignaturePendingSwapRequests()
   ]);
   if (profileResult.status === "rejected") {
     return <OfflineDashboard />;
@@ -20,13 +23,21 @@ export default async function DashboardPage() {
   const profile = profileResult.value;
   const shifts = shiftsResult.status === "fulfilled" ? shiftsResult.value : [];
   const swapRequests = swapsResult.status === "fulfilled" ? swapsResult.value : [];
+  const workRequests = workRequestsResult.status === "fulfilled" ? workRequestsResult.value : [];
+  const signatureRequests = signatureRequestsResult.status === "fulfilled" ? signatureRequestsResult.value : [];
 
   if (!profile) {
     redirect("/login");
   }
 
   return (
-    <AppShell profile={profile} shifts={shifts}>
+    <AppShell
+      profile={profile}
+      shifts={shifts}
+      signatureRequests={signatureRequests}
+      swapRequests={swapRequests}
+      workRequests={workRequests}
+    >
       <DashboardSnapshotWriter profile={profile} shifts={shifts} swapRequests={swapRequests} />
       <div className="space-y-8">
         <MonthCalendar shifts={shifts} />

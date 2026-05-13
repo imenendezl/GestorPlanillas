@@ -25,6 +25,7 @@ export function CreateSwapRequestModal({ shift, open, onClose }: { shift: Shift 
     startTransition(async () => {
       const result = await createSwapRequestClientAction({
         shiftId: currentShift.id,
+        mode: "Exchange",
         offeredShiftCodes: currentShift.shiftCodes,
         proposedDates: proposedDates
           .split(",")

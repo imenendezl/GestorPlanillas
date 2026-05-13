@@ -34,6 +34,7 @@ async function replayOperation(operation: OfflineOperation) {
   if (operation.type === "createSwapRequest") {
     const formData = new FormData();
     formData.set("shiftId", operation.shiftId);
+    formData.set("mode", operation.mode);
     formData.set("offeredShiftCodes", operation.offeredShiftCodes.join("+"));
     formData.set("proposedDates", operation.proposedDates.join(","));
     return createSwapRequestAction(formData);

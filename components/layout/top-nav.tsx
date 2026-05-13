@@ -1,14 +1,25 @@
 import Link from "next/link";
-import { CalendarDays, Menu } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, Menu, Palette, Repeat2, Settings } from "lucide-react";
 import { signOutAction } from "@/lib/auth/actions";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { SyncStatus } from "@/components/offline/sync-status";
 import { ShiftNotifications } from "./shift-notifications";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { Shift, UserProfile } from "@/types/domain";
+import type { Shift, SwapRequest, UserProfile, WorkRequest } from "@/types/domain";
 
-export function TopNav({ profile, shifts = [] }: { profile: UserProfile | null; shifts?: Shift[] }) {
+export function TopNav({
+  profile,
+  shifts = [],
+  swapRequests = [],
+  workRequests = [],
+  signatureRequests = []
+}: {
+  profile: UserProfile | null;
+  shifts?: Shift[];
+  swapRequests?: SwapRequest[];
+  workRequests?: WorkRequest[];
+  signatureRequests?: SwapRequest[];
+}) {
   return (
     <header className="sticky top-0 z-40 bg-white/88 text-foreground shadow-[0_18px_44px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:bg-black/88 dark:text-white dark:shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
       <div className="pointer-events-none absolute inset-0 bg-black/[0.03] dark:bg-white/[0.04]" />
@@ -27,8 +38,12 @@ export function TopNav({ profile, shifts = [] }: { profile: UserProfile | null; 
           {profile?.role === "Admin" && <Link href="/admin">Admin</Link>}
           {(profile?.role === "Admin" || profile?.role === "Supervisor") && <Link href="/supervisor">Supervisor</Link>}
           <SyncStatus />
-          <ShiftNotifications shifts={shifts} />
-          <ThemeToggle />
+          <ShiftNotifications
+            shifts={shifts}
+            signatureRequests={signatureRequests}
+            swapRequests={swapRequests}
+            workRequests={workRequests}
+          />
           {profile && (
             <form action={signOutAction}>
               <Button className="min-h-11 px-4 text-sm" type="submit" variant="utility">
@@ -39,8 +54,12 @@ export function TopNav({ profile, shifts = [] }: { profile: UserProfile | null; 
         </nav>
         <div className="flex items-center justify-end gap-2 sm:hidden">
           <SyncStatus />
-          <ShiftNotifications shifts={shifts} />
-          <ThemeToggle />
+          <ShiftNotifications
+            shifts={shifts}
+            signatureRequests={signatureRequests}
+            swapRequests={swapRequests}
+            workRequests={workRequests}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -67,6 +86,31 @@ export function TopNav({ profile, shifts = [] }: { profile: UserProfile | null; 
                   <Link href="/supervisor">Supervisor</Link>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/requests">
+                  <Repeat2 className="mr-2 h-4 w-4" />
+                  Solicitudes
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/work-offers">
+                  <BriefcaseBusiness className="mr-2 h-4 w-4" />
+                  Ofrecer trabajar
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configuración
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/personalization">
+                  <Palette className="mr-2 h-4 w-4" />
+                  Personalización
+                </Link>
+              </DropdownMenuItem>
               {profile && (
                 <>
                   <DropdownMenuSeparator />

@@ -2,12 +2,15 @@ export type ShiftCode = "M" | "T" | "N" | "-" | "L";
 export type Position = "Nurse" | "TMSCAE";
 export type UserRole = "Admin" | "Supervisor" | "Employee";
 export type SwapStatus = "Open" | "Accepted" | "Cancelled";
+export type SwapMode = "Exchange" | "Coverage";
+export type SignatureStatus = "Unsigned" | "PartiallySigned" | "Signed";
 export type WorkRequestStatus = "Open" | "Cancelled" | "Approved" | "Rejected";
 
 export type UserProfile = {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
   unit: string;
   position: Position;
   role: UserRole;
@@ -25,9 +28,19 @@ export type SwapRequest = {
   requesterId: string;
   shiftId: string;
   status: SwapStatus;
+  mode: SwapMode;
+  requestedDate: string | null;
+  requestedShiftCodes: ShiftCode[];
   offeredShiftCodes: ShiftCode[];
   proposedDates: string[];
   acceptedBy: string | null;
+  accepterName?: string;
+  acceptedDate: string | null;
+  accepterPreviousShiftCodes: ShiftCode[];
+  requesterSignedAt: string | null;
+  accepterSignedAt: string | null;
+  signatureStatus: SignatureStatus;
+  requesterName?: string;
 };
 
 export type WorkRequest = {

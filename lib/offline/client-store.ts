@@ -1,6 +1,6 @@
 "use client";
 
-import type { Shift, ShiftCode, SwapRequest, UserProfile } from "@/types/domain";
+import type { Shift, ShiftCode, SwapMode, SwapRequest, UserProfile } from "@/types/domain";
 
 const STORE_KEY = "gestor-planillas:offline:v1";
 export const OFFLINE_STORE_EVENT = "gestor-planillas:offline-store-changed";
@@ -14,6 +14,7 @@ export type OfflineOperation =
       id: string;
       type: "createSwapRequest";
       shiftId: string;
+      mode: SwapMode;
       offeredShiftCodes: ShiftCode[];
       proposedDates: string[];
       createdAt: number;
@@ -27,6 +28,7 @@ export type OfflineOperationInput =
   | {
       type: "createSwapRequest";
       shiftId: string;
+      mode: SwapMode;
       offeredShiftCodes: ShiftCode[];
       proposedDates: string[];
     }

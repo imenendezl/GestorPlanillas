@@ -160,16 +160,16 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
   }
 
   return (
-    <div ref={calendarRef}>
+    <div className="mx-auto w-full lg:max-w-2xl" ref={calendarRef}>
       <Card>
-        <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 space-y-0 p-3 sm:gap-3 sm:p-5">
-          <Button aria-label="Mes anterior" onClick={() => moveMonth(-1)} size="icon" type="button" variant="outline">
+        <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 space-y-0 p-3 sm:gap-3 sm:p-4 lg:p-3">
+          <Button aria-label="Mes anterior" className="h-10 min-h-10 w-10 min-w-10 sm:h-11 sm:min-h-11 sm:w-11 sm:min-w-11" onClick={() => moveMonth(-1)} size="icon" type="button" variant="outline">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="flex min-w-0 flex-wrap items-center justify-center gap-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center justify-center gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
             <select
               aria-label="Seleccionar mes"
-              className="min-h-11 w-full min-w-0 rounded-lg border bg-background px-3 text-center text-align-last-center text-base font-semibold capitalize text-foreground outline-none transition focus:ring-2 focus:ring-ring min-[420px]:w-36 sm:w-44 sm:text-lg"
+              className="calendar-select min-h-10 w-full min-w-0 rounded-lg border bg-background px-2 text-center text-sm font-semibold capitalize text-foreground outline-none transition focus:ring-2 focus:ring-ring min-[420px]:w-36 sm:min-h-11 sm:w-44 sm:px-3 sm:text-lg lg:min-h-10 lg:text-base"
               onChange={(event) => selectMonth(Number(event.target.value))}
               value={activeDate.getMonth()}
             >
@@ -181,7 +181,7 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
             </select>
             <select
               aria-label="Seleccionar año"
-              className="min-h-11 w-24 rounded-lg border bg-background px-3 text-center text-align-last-center text-base font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring sm:w-28 sm:text-lg"
+              className="calendar-select min-h-10 w-[4.75rem] rounded-lg border bg-background px-2 text-center text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring sm:min-h-11 sm:w-28 sm:px-3 sm:text-lg lg:min-h-10 lg:text-base"
               onChange={(event) => selectYear(Number(event.target.value))}
               value={activeDate.getFullYear()}
             >
@@ -192,14 +192,14 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
               ))}
             </select>
           </div>
-          <Button aria-label="Mes siguiente" onClick={() => moveMonth(1)} size="icon" type="button" variant="outline">
+          <Button aria-label="Mes siguiente" className="h-10 min-h-10 w-10 min-w-10 sm:h-11 sm:min-h-11 sm:w-11 sm:min-w-11" onClick={() => moveMonth(1)} size="icon" type="button" variant="outline">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
+        <CardContent className="p-4 pt-0 sm:p-4 sm:pt-0 lg:p-3 lg:pt-0">
         <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold leading-tight text-muted-foreground">
           {spanishWeekdays.map((day) => (
-            <div key={day} className="py-2">
+            <div key={day} className="py-1.5 lg:py-1">
               {day}
             </div>
           ))}
@@ -217,7 +217,7 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
               <button
                 aria-label={`${ariaLabel}${shiftCodes ? `, turno ${shiftCodes.join(" + ")}` : ", sin turno"}`}
                 className={[
-                  "min-h-14 min-w-0 rounded-lg text-left transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-16 lg:min-h-[4.5rem]",
+                  "min-h-14 min-w-0 rounded-lg text-left transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-14 lg:min-h-[4.25rem]",
                   selected && "ring-2 ring-emerald-600"
                 ]
                   .filter(Boolean)
@@ -237,15 +237,15 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
         </CardContent>
       </Card>
       {selectedDate && (
-        <div className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-2">
-          <Button aria-label="Día anterior" className="min-h-14 w-full rounded-lg" onClick={() => moveSelectedDay(-1)} size="icon" type="button" variant="outline">
+        <div className="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2 lg:gap-1.5">
+          <Button aria-label="Día anterior" className="min-h-12 w-full rounded-lg lg:min-h-10" onClick={() => moveSelectedDay(-1)} size="icon" type="button" variant="outline">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           {shiftDefinitions.map((definition) => (
             <button
               aria-label={definition.label}
               className={[
-                "flex min-h-14 w-full min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-lg font-semibold leading-none transition active:scale-95",
+                "flex min-h-12 w-full min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-base font-semibold leading-none transition active:scale-95 lg:min-h-10 lg:py-1",
                 definition.colorClassName
               ]
                 .filter(Boolean)
@@ -257,7 +257,7 @@ export function MonthCalendar({ shifts }: { shifts: Shift[] }) {
               {definition.shortLabel}
             </button>
           ))}
-          <Button aria-label="Día siguiente" className="min-h-14 w-full rounded-lg" onClick={() => moveSelectedDay(1)} size="icon" type="button" variant="outline">
+          <Button aria-label="Día siguiente" className="min-h-12 w-full rounded-lg lg:min-h-10" onClick={() => moveSelectedDay(1)} size="icon" type="button" variant="outline">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

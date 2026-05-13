@@ -1,11 +1,11 @@
 "use client";
 
-import { acceptSwapRequestAction, createSwapRequestAction } from "@/lib/swaps/actions";
-import { createWorkRequestAction } from "@/lib/work-requests/actions";
+import { acceptSwapRequestAction, createSwapRequestAction, updateSwapSignatureAction } from "@/lib/swaps/actions";
+import { cancelWorkRequestAction, createWorkRequestAction } from "@/lib/work-requests/actions";
 import { deleteShiftAction, saveShiftForDateAction } from "@/lib/shifts/actions";
 import { actionSuccess, type ActionResult } from "@/lib/actions/result";
 import { deleteLocalShift, enqueueOfflineOperation, upsertLocalShift } from "./client-store";
-import type { Shift, ShiftCode } from "@/types/domain";
+import type { Shift, ShiftCode, SwapMode } from "@/types/domain";
 
 function shouldQueueOffline(error?: unknown) {
   return typeof navigator !== "undefined" && !navigator.onLine
@@ -69,8 +69,21 @@ export function createWorkRequestClientAction(requestDate: string) {
   );
 }
 
+export function cancelWorkRequestClientAction(requestId: string) {
+  return executeOrQueue(
+    async () => {
+      const formData = new FormData();
+      formData.set("requestId", requestId);
+      return cancelWorkRequestAction(formData);
+    },
+    () => undefined,
+    "Sin conexión: vuelve a intentarlo cuando tengas conexión."
+  );
+}
+
 export function createSwapRequestClientAction(input: {
   shiftId: string;
+  mode: SwapMode;
   offeredShiftCodes: ShiftCode[];
   proposedDates: string[];
 }) {
@@ -78,6 +91,7 @@ export function createSwapRequestClientAction(input: {
     async () => {
       const formData = new FormData();
       formData.set("shiftId", input.shiftId);
+      formData.set("mode", input.mode);
       formData.set("offeredShiftCodes", input.offeredShiftCodes.join("+"));
       formData.set("proposedDates", input.proposedDates.join(","));
       return createSwapRequestAction(formData);
@@ -88,10 +102,15 @@ export function createSwapRequestClientAction(input: {
 }
 
 export function acceptSwapRequestClientAction(requestId: string) {
+  return acceptSwapRequestWithDateClientAction(requestId, "");
+}
+
+export function acceptSwapRequestWithDateClientAction(requestId: string, acceptedDate: string) {
   return executeOrQueue(
     async () => {
       const formData = new FormData();
       formData.set("requestId", requestId);
+      formData.set("acceptedDate", acceptedDate);
       return acceptSwapRequestAction(formData);
     },
     () => enqueueOfflineOperation({ type: "acceptSwapRequest", requestId }),
@@ -99,3 +118,15 @@ export function acceptSwapRequestClientAction(requestId: string) {
   );
 }
 
+export function updateSwapSignatureClientAction(requestId: string, signed: boolean) {
+  return executeOrQueue(
+    async () => {
+      const formData = new FormData();
+      formData.set("requestId", requestId);
+      formData.set("signed", String(signed));
+      return updateSwapSignatureAction(formData);
+    },
+    () => undefined,
+    "Sin conexión: vuelve a marcar la firma cuando tengas conexión."
+  );
+}

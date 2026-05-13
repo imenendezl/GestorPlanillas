@@ -1,4 +1,4 @@
-import type { Position, ShiftCode, SwapStatus, UserRole, WorkRequestStatus } from "./domain";
+import type { Position, ShiftCode, SwapMode, SwapStatus, UserRole, WorkRequestStatus } from "./domain";
 
 export type Database = {
   public: {
@@ -80,9 +80,16 @@ export type Database = {
           requester_id: string;
           shift_id: string;
           status: SwapStatus;
+          mode: SwapMode;
+          requested_date: string | null;
+          requested_shift_codes: ShiftCode[];
           offered_shift_codes: ShiftCode[];
           proposed_dates: string[];
           accepted_by: string | null;
+          accepter_previous_shift_codes: ShiftCode[];
+          accepted_date: string | null;
+          requester_signed_at: string | null;
+          accepter_signed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -91,14 +98,28 @@ export type Database = {
           requester_id: string;
           shift_id: string;
           status?: SwapStatus;
+          mode?: SwapMode;
+          requested_date?: string | null;
+          requested_shift_codes?: ShiftCode[];
           offered_shift_codes: ShiftCode[];
           proposed_dates?: string[];
           accepted_by?: string | null;
+          accepter_previous_shift_codes?: ShiftCode[];
+          accepted_date?: string | null;
+          requester_signed_at?: string | null;
+          accepter_signed_at?: string | null;
         };
         Update: Partial<{
           status: SwapStatus;
+          mode: SwapMode;
+          requested_date: string | null;
+          requested_shift_codes: ShiftCode[];
           proposed_dates: string[];
           accepted_by: string | null;
+          accepter_previous_shift_codes: ShiftCode[];
+          accepted_date: string | null;
+          requester_signed_at: string | null;
+          accepter_signed_at: string | null;
           updated_at: string;
         }>;
         Relationships: [];
@@ -132,6 +153,7 @@ export type Database = {
       user_position: Position;
       user_role: UserRole;
       swap_status: SwapStatus;
+      swap_mode: SwapMode;
       work_request_status: WorkRequestStatus;
     };
     CompositeTypes: Record<string, never>;

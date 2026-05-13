@@ -118,8 +118,95 @@ export async function getCurrentProfile() {
     id: data.id,
     firstName: data.first_name,
     lastName: data.last_name,
+    email: data.email,
     unit: data.unit,
     position: data.position,
     role: data.role
   };
+}
+
+export async function updateProfileAction(formData: FormData) {
+  const context = await getRequestUserContext();
+  const firstName = getString(formData, "firstName");
+  const lastName = getString(formData, "lastName");
+  const unit = getString(formData, "unit");
+  const position = getString(formData, "position") as Position;
+
+  if (!context) {
+    return { ok: false, message: "Debes iniciar sesión." };
+  }
+
+  if (!firstName || !lastName || !unit || !position) {
+    return { ok: false, message: "Completa todos los campos del perfil." };
+  }
+
+  const { error } = await context.db
+    .from("users")
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      unit,
+      position
+    })
+    .eq("id", context.userId);
+
+  if (error) {
+    return { ok: false, message: "No se pudo actualizar el perfil." };
+  }
+
+  return { ok: true, message: "Perfil actualizado." };
+}
+
+export async function updateEmailAction(formData: FormData) {
+  const context = await getRequestUserContext();
+  const supabase = await createClient();
+  const email = getString(formData, "email").toLowerCase();
+
+  if (!context) {
+    return { ok: false, message: "Debes iniciar sesión." };
+  }
+
+  if (!email) {
+    return { ok: false, message: "Indica un correo válido." };
+  }
+
+  if (context.isDevBypass) {
+    const { error } = await context.db.from("users").update({ email }).eq("id", context.userId);
+    return error ? { ok: false, message: "No se pudo actualizar el correo." } : { ok: true, message: "Correo actualizado." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ email });
+
+  if (error) {
+    return { ok: false, message: "No se pudo actualizar el correo. Puede requerir confirmación por email." };
+  }
+
+  await context.db.from("users").update({ email }).eq("id", context.userId);
+  return { ok: true, message: "Correo actualizado. Revisa tu email si Supabase solicita confirmación." };
+}
+
+export async function updatePasswordAction(formData: FormData) {
+  const context = await getRequestUserContext();
+  const supabase = await createClient();
+  const password = getString(formData, "password");
+
+  if (!context) {
+    return { ok: false, message: "Debes iniciar sesión." };
+  }
+
+  if (password.length < 6) {
+    return { ok: false, message: "La contraseña debe tener al menos 6 caracteres." };
+  }
+
+  if (context.isDevBypass) {
+    return { ok: false, message: "El acceso de desarrollo no permite cambiar contraseña." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { ok: false, message: "No se pudo actualizar la contraseña." };
+  }
+
+  return { ok: true, message: "Contraseña actualizada." };
 }

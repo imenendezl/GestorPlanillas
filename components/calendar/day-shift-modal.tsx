@@ -130,6 +130,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
                       const input = document.getElementById("proposedDates") as HTMLInputElement | null;
                       return createSwapRequestClientAction({
                         shiftId: shift.id,
+                        mode: "Exchange",
                         offeredShiftCodes: shift.shiftCodes,
                         proposedDates: (input?.value ?? "")
                           .split(",")
