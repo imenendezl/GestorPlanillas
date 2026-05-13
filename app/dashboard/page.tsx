@@ -5,14 +5,15 @@ import { OfflineDashboard } from "@/components/offline/offline-dashboard";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/actions";
 import { listCurrentUserShifts } from "@/lib/shifts/actions";
-import { listSignaturePendingSwapRequests, listVisibleSwapRequests } from "@/lib/swaps/actions";
+import { listCurrentUserSwapRequests, listSignaturePendingSwapRequests, listVisibleSwapRequests } from "@/lib/swaps/actions";
 import { listVisibleWorkRequests } from "@/lib/work-requests/actions";
 
 export default async function DashboardPage() {
-  const [profileResult, shiftsResult, swapsResult, workRequestsResult, signatureRequestsResult] = await Promise.allSettled([
+  const [profileResult, shiftsResult, swapsResult, ownSwapsResult, workRequestsResult, signatureRequestsResult] = await Promise.allSettled([
     getCurrentProfile(),
     listCurrentUserShifts(),
     listVisibleSwapRequests(),
+    listCurrentUserSwapRequests(),
     listVisibleWorkRequests(),
     listSignaturePendingSwapRequests()
   ]);
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
   const profile = profileResult.value;
   const shifts = shiftsResult.status === "fulfilled" ? shiftsResult.value : [];
   const swapRequests = swapsResult.status === "fulfilled" ? swapsResult.value : [];
+  const ownSwapRequests = ownSwapsResult.status === "fulfilled" ? ownSwapsResult.value : [];
   const workRequests = workRequestsResult.status === "fulfilled" ? workRequestsResult.value : [];
   const signatureRequests = signatureRequestsResult.status === "fulfilled" ? signatureRequestsResult.value : [];
 
@@ -38,9 +40,9 @@ export default async function DashboardPage() {
       swapRequests={swapRequests}
       workRequests={workRequests}
     >
-      <DashboardSnapshotWriter profile={profile} shifts={shifts} swapRequests={swapRequests} />
+      <DashboardSnapshotWriter profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
       <div className="space-y-8">
-        <MonthCalendar shifts={shifts} />
+        <MonthCalendar profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
       </div>
     </AppShell>
   );

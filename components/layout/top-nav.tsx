@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BriefcaseBusiness, CalendarDays, Menu, Palette, Repeat2, Settings } from "lucide-react";
+import { CalendarDays, Menu, Palette, ShieldCheck, UserRound, Users } from "lucide-react";
 import { signOutAction } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { SyncStatus } from "@/components/offline/sync-status";
@@ -20,23 +20,70 @@ export function TopNav({
   workRequests?: WorkRequest[];
   signatureRequests?: SwapRequest[];
 }) {
+  const profileMenu = (
+    <DropdownMenuContent align="end">
+      {profile?.role === "Admin" && (
+        <DropdownMenuItem asChild>
+          <Link href="/admin">
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            Admin
+          </Link>
+        </DropdownMenuItem>
+      )}
+      {(profile?.role === "Admin" || profile?.role === "Supervisor") && (
+        <DropdownMenuItem asChild>
+          <Link href="/supervisor">
+            <Users className="mr-2 h-4 w-4" />
+            Supervisor
+          </Link>
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem asChild>
+        <Link href="/settings">
+          <UserRound className="mr-2 h-4 w-4" />
+          Perfil
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link href="/personalization">
+          <Palette className="mr-2 h-4 w-4" />
+          Personalización
+        </Link>
+      </DropdownMenuItem>
+      {profile && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <form action={signOutAction} className="w-full">
+              <button className="w-full text-left" type="submit">
+                Salir
+              </button>
+            </form>
+          </DropdownMenuItem>
+        </>
+      )}
+    </DropdownMenuContent>
+  );
+
   return (
-    <header className="sticky top-0 z-40 bg-white/88 text-foreground shadow-[0_18px_44px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:bg-black/88 dark:text-white dark:shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
-      <div className="pointer-events-none absolute inset-0 bg-black/[0.03] dark:bg-white/[0.04]" />
-      <div className="relative mx-auto grid min-h-16 max-w-6xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2 sm:min-h-20">
-        <Link href="/dashboard" className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+    <header className="sticky top-0 z-40 pt-3">
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-10 bg-background sm:h-12" />
+      <div className="mx-auto flex w-full max-w-6xl px-3 sm:px-4">
+        <div className="grid min-h-16 min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-apple border bg-card/92 px-3 py-2 text-card-foreground shadow-[0_18px_44px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:min-h-20 sm:px-4 dark:shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
+        <Link
+          href="/dashboard"
+          className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition hover:bg-accent hover:text-accent-foreground sm:text-base"
+        >
           <CalendarDays className="h-5 w-5" />
           <span className="hidden min-[380px]:inline">Planillas</span>
         </Link>
         {profile && (
           <div className="min-w-0 text-center">
             <p className="truncate text-sm font-semibold leading-tight sm:text-base">{profile.firstName}</p>
-            <p className="truncate text-xs leading-tight text-muted-foreground dark:text-white/70">{profile.unit}</p>
+            <p className="truncate text-xs leading-tight text-muted-foreground">{profile.unit}</p>
           </div>
         )}
         <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-3 text-sm sm:flex lg:gap-5">
-          {profile?.role === "Admin" && <Link href="/admin">Admin</Link>}
-          {(profile?.role === "Admin" || profile?.role === "Supervisor") && <Link href="/supervisor">Supervisor</Link>}
           <SyncStatus />
           <ShiftNotifications
             shifts={shifts}
@@ -46,7 +93,7 @@ export function TopNav({
           />
           {profile && (
             <form action={signOutAction}>
-              <Button className="min-h-11 px-4 text-sm" type="submit" variant="utility">
+              <Button className="min-h-11 rounded-lg px-4 text-sm" type="submit" variant="utility">
                 Salir
               </Button>
             </form>
@@ -64,7 +111,7 @@ export function TopNav({
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Abrir menú"
-                className="border-0 bg-black/8 text-foreground hover:bg-black/12 hover:text-foreground dark:bg-white/12 dark:text-white dark:hover:bg-white/22 dark:hover:text-white"
+                className="rounded-lg border-border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground"
                 size="icon"
                 type="button"
                 variant="outline"
@@ -72,59 +119,9 @@ export function TopNav({
                 <Menu className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard">Mi planilla</Link>
-              </DropdownMenuItem>
-              {profile?.role === "Admin" && (
-                <DropdownMenuItem asChild>
-                  <Link href="/admin">Admin</Link>
-                </DropdownMenuItem>
-              )}
-              {(profile?.role === "Admin" || profile?.role === "Supervisor") && (
-                <DropdownMenuItem asChild>
-                  <Link href="/supervisor">Supervisor</Link>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/requests">
-                  <Repeat2 className="mr-2 h-4 w-4" />
-                  Solicitudes
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/work-offers">
-                  <BriefcaseBusiness className="mr-2 h-4 w-4" />
-                  Ofrecer trabajar
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configuración
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/personalization">
-                  <Palette className="mr-2 h-4 w-4" />
-                  Personalización
-                </Link>
-              </DropdownMenuItem>
-              {profile && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <form action={signOutAction} className="w-full">
-                      <button className="w-full text-left" type="submit">
-                        Salir
-                      </button>
-                    </form>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
+            {profileMenu}
           </DropdownMenu>
+        </div>
         </div>
       </div>
     </header>

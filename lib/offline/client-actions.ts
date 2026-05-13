@@ -4,11 +4,12 @@ import { acceptSwapRequestAction, createSwapRequestAction, updateSwapSignatureAc
 import { cancelWorkRequestAction, createWorkRequestAction } from "@/lib/work-requests/actions";
 import { deleteShiftAction, saveShiftForDateAction } from "@/lib/shifts/actions";
 import { actionSuccess, type ActionResult } from "@/lib/actions/result";
+import { webConnectivityAdapter } from "@/lib/platform/web";
 import { deleteLocalShift, enqueueOfflineOperation, upsertLocalShift } from "./client-store";
 import type { Shift, ShiftCode, SwapMode } from "@/types/domain";
 
 function shouldQueueOffline(error?: unknown) {
-  return typeof navigator !== "undefined" && !navigator.onLine
+  return !webConnectivityAdapter.isOnline()
     ? true
     : error instanceof TypeError || (error instanceof Error && /fetch|network|offline/i.test(error.message));
 }

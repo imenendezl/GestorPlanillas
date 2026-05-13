@@ -27,10 +27,12 @@ type DayShiftModalProps = {
 
 export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps) {
   const [selectedCodes, setSelectedCodes] = useState<ShiftCode[]>(shift?.shiftCodes ?? ["L"]);
+  const [proposedDates, setProposedDates] = useState("");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setSelectedCodes(shift?.shiftCodes ?? ["L"]);
+    setProposedDates("");
   }, [shift, date]);
 
   function toggleCode(code: ShiftCode) {
@@ -65,7 +67,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent>
+      <DialogContent className="bottom-0 top-auto max-h-[calc(100svh-1rem)] w-full max-w-lg translate-y-0 rounded-b-none px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:bottom-auto sm:top-1/2 sm:w-[calc(100vw-2rem)] sm:-translate-y-1/2 sm:rounded-apple sm:px-6 sm:pb-6">
         <DialogHeader>
           <DialogTitle>{formatSpanishDate(date)}</DialogTitle>
           <DialogDescription>Modifica tu turno o solicita trabajar ese día.</DialogDescription>
@@ -77,7 +79,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
               <p className="text-sm font-semibold">Turno</p>
               {shift && <ShiftBadge codes={shift.shiftCodes} />}
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2">
               {shiftDefinitions.map((definition) => {
                 const selected = selectedCodes.includes(definition.code);
                 const candidateCodes = selected
@@ -99,6 +101,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
               })}
             </div>
             <Button
+              className="w-full"
               disabled={isPending}
               onClick={() =>
                 runAction(async () => {
@@ -112,7 +115,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
           </div>
 
           <div className="space-y-3 border-t pt-5">
-            <Button disabled={isPending} onClick={() => runAction(() => createWorkRequestClientAction(date))} type="button" variant="secondary">
+            <Button className="w-full" disabled={isPending} onClick={() => runAction(() => createWorkRequestClientAction(date))} type="button" variant="secondary">
               Solicitar trabajar
             </Button>
 
@@ -122,17 +125,23 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
                   Turno actual: <span className="font-semibold text-foreground">{formatShiftCodes(shift.shiftCodes)}</span>
                 </p>
                 <label className="sr-only" htmlFor="proposedDates">Días propuestos</label>
-                <Input id="proposedDates" placeholder="Días propuestos: 2026-05-18, 2026-05-20" />
+                <Input
+                  id="proposedDates"
+                  inputMode="numeric"
+                  onChange={(event) => setProposedDates(event.target.value)}
+                  placeholder="Días propuestos: 2026-05-18, 2026-05-20"
+                  value={proposedDates}
+                />
                 <Button
+                  className="w-full"
                   disabled={isPending}
                   onClick={() =>
                     runAction(async () => {
-                      const input = document.getElementById("proposedDates") as HTMLInputElement | null;
                       return createSwapRequestClientAction({
                         shiftId: shift.id,
                         mode: "Exchange",
                         offeredShiftCodes: shift.shiftCodes,
-                        proposedDates: (input?.value ?? "")
+                        proposedDates: proposedDates
                           .split(",")
                           .map((proposedDate) => proposedDate.trim())
                           .filter(Boolean)
@@ -145,6 +154,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
                   Pedir quitármelo
                 </Button>
                 <Button
+                  className="w-full"
                   disabled={isPending}
                   onClick={() =>
                     runAction(async () => {

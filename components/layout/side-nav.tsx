@@ -10,7 +10,7 @@ const baseItems = [
   { href: "/dashboard", label: "Mi planilla", icon: CalendarDays },
   { href: "/requests", label: "Solicitudes", icon: Repeat2 },
   { href: "/work-offers", label: "Ofrecer trabajar", icon: BriefcaseBusiness },
-  { href: "/settings", label: "Configuración", icon: Settings },
+  { href: "/settings", label: "Perfil", icon: Settings },
   { href: "/personalization", label: "Personalización", icon: Palette }
 ];
 

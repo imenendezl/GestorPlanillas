@@ -15,6 +15,7 @@ import {
   removeOfflineOperation,
   type OfflineOperation
 } from "@/lib/offline/client-store";
+import { webConnectivityAdapter } from "@/lib/platform/web";
 
 async function replayOperation(operation: OfflineOperation) {
   if (operation.type === "saveShift") {
@@ -51,8 +52,8 @@ export function OfflineSyncProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     async function flushQueue() {
-      if (syncingRef.current || !navigator.onLine) {
-        if (!navigator.onLine) {
+      if (syncingRef.current || !webConnectivityAdapter.isOnline()) {
+        if (!webConnectivityAdapter.isOnline()) {
           markOfflineSyncError();
         }
         return;
@@ -99,12 +100,12 @@ export function OfflineSyncProvider({ children }: { children: React.ReactNode })
       }
     }
 
-    window.addEventListener("online", flushQueue);
+    const unsubscribeConnectivity = webConnectivityAdapter.subscribe(flushQueue);
     window.addEventListener(OFFLINE_SYNC_REQUEST_EVENT, flushQueue);
     void flushQueue();
 
     return () => {
-      window.removeEventListener("online", flushQueue);
+      unsubscribeConnectivity();
       window.removeEventListener(OFFLINE_SYNC_REQUEST_EVENT, flushQueue);
     };
   }, [router]);

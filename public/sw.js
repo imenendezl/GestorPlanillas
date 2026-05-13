@@ -1,5 +1,17 @@
-const CACHE_NAME = "gestor-planillas-shell-v2";
-const SHELL_URLS = ["/", "/dashboard", "/login", "/manifest.webmanifest", "/planillas-icon.svg"];
+const CACHE_NAME = "gestor-planillas-shell-v3";
+const SHELL_URLS = [
+  "/",
+  "/dashboard",
+  "/login",
+  "/requests",
+  "/work-offers",
+  "/settings",
+  "/manifest.webmanifest",
+  "/planillas-icon.svg",
+  "/planillas-icon-192.png",
+  "/planillas-icon-512.png",
+  "/apple-touch-icon.png"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -29,8 +41,28 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        const networkResponse = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const responseCopy = response.clone();
+              void caches.open(CACHE_NAME).then((cache) => cache.put(request, responseCopy));
+            }
+
+            return response;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse ?? networkResponse;
+      })
+    );
+    return;
+  }
+
   if (url.pathname.startsWith("/_next/")) {
-    event.respondWith(fetch(request));
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
     return;
   }
 

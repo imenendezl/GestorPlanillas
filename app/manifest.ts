@@ -7,14 +7,38 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Gestión de turnos hospitalarios con soporte offline.",
     start_url: "/dashboard",
     display: "standalone",
+    orientation: "portrait",
     background_color: "#f5f5f7",
-    theme_color: "#000000",
+    theme_color: "#111113",
     icons: [
+      {
+        src: "/planillas-icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/planillas-icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/planillas-icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable"
+      },
+      {
+        src: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+        purpose: "any"
+      },
       {
         src: "/planillas-icon.svg",
         sizes: "any",
-        type: "image/svg+xml",
-        purpose: "maskable"
+        type: "image/svg+xml"
       }
     ]
   };

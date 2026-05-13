@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/actions";
 import { TopNav } from "./top-nav";
 import { SideNav } from "./side-nav";
+import { MobileTabNav } from "./mobile-tab-nav";
 import type { Shift, SwapRequest, UserProfile, WorkRequest } from "@/types/domain";
 
 export async function AppShell({
@@ -40,10 +41,11 @@ export async function AppShell({
         swapRequests={swapRequests}
         workRequests={workRequests}
       />
-      <div className="mx-auto flex w-full max-w-6xl gap-5 px-4 py-4 sm:py-5">
+      <div className="mx-auto flex w-full max-w-6xl gap-5 px-3 pb-24 pt-3 sm:px-4 sm:py-5 lg:pb-5">
         <SideNav profile={profile} />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+      <MobileTabNav profile={profile} />
     </>
   );
 }

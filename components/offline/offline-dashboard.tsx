@@ -7,14 +7,16 @@ import { MonthCalendar } from "@/components/calendar/month-calendar";
 import { QuickShiftWizard } from "@/components/calendar/quick-shift-wizard";
 import { SwapBoard } from "@/components/swaps/swap-board";
 import { Button } from "@/components/ui/button";
-import { readDashboardSnapshot, type DashboardSnapshot } from "@/lib/offline/client-store";
+import { readDashboardSnapshot, readOfflineStore, requestOfflineSync, type DashboardSnapshot } from "@/lib/offline/client-store";
 import { SyncStatus } from "./sync-status";
 
 export function OfflineDashboard() {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null | undefined>(undefined);
+  const [queueCount, setQueueCount] = useState(0);
 
   useEffect(() => {
     setSnapshot(readDashboardSnapshot());
+    setQueueCount(readOfflineStore().queue.length);
   }, []);
 
   if (snapshot === undefined) {
@@ -44,10 +46,14 @@ export function OfflineDashboard() {
             <CalendarDays className="h-4 w-4" />
             Planillas
           </div>
-          <div className="flex items-center gap-2 text-xs leading-tight text-white/80">
+          <button
+            className="flex min-h-9 items-center gap-2 rounded-full bg-white/10 px-3 text-xs font-semibold leading-tight text-white/90"
+            onClick={requestOfflineSync}
+            type="button"
+          >
             <CloudOff className="h-4 w-4" />
-            Modo local
-          </div>
+            {queueCount > 0 ? `${queueCount} pendientes` : "Modo local"}
+          </button>
           <SyncStatus />
         </div>
       </header>
@@ -60,7 +66,7 @@ export function OfflineDashboard() {
             </div>
             <QuickShiftWizard shifts={snapshot.shifts} />
           </section>
-          <MonthCalendar shifts={snapshot.shifts} />
+          <MonthCalendar profile={snapshot.profile} shifts={snapshot.shifts} swapRequests={snapshot.swapRequests} />
           <SwapBoard requests={snapshot.swapRequests} />
         </div>
       </main>
