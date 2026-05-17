@@ -43,7 +43,9 @@ export async function AppShell({
       />
       <div className="mx-auto flex w-full max-w-6xl gap-5 px-3 pb-24 pt-3 sm:px-4 sm:py-5 lg:pb-5">
         <SideNav profile={profile} />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1" id="main-content" tabIndex={-1}>
+          {children}
+        </main>
       </div>
       <MobileTabNav profile={profile} />
     </>

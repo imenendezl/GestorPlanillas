@@ -31,6 +31,8 @@ export function LoginForm({ error, message }: { error?: string; message?: string
   const showRegistration = emailState.step === "register" && !registrationState.message;
   const state = showRegistration ? registrationState : registrationState.message ? registrationState : emailState;
   const email = emailState.email || registrationState.email;
+  const messageId = state.message ? "auth-message" : undefined;
+  const errorId = state.error ? "auth-error" : undefined;
 
   if (showRegistration) {
     return (
@@ -44,13 +46,13 @@ export function LoginForm({ error, message }: { error?: string; message?: string
             <label className="mb-2 block text-sm font-semibold" htmlFor="firstName">
               Nombre
             </label>
-            <Input autoComplete="given-name" id="firstName" name="firstName" required />
+            <Input aria-describedby={errorId} aria-invalid={Boolean(state.error)} autoComplete="given-name" id="firstName" name="firstName" required />
           </div>
           <div>
             <label className="mb-2 block text-sm font-semibold" htmlFor="lastName">
               Apellidos
             </label>
-            <Input autoComplete="family-name" id="lastName" name="lastName" required />
+            <Input aria-describedby={errorId} aria-invalid={Boolean(state.error)} autoComplete="family-name" id="lastName" name="lastName" required />
           </div>
         </div>
         <div>
@@ -63,11 +65,13 @@ export function LoginForm({ error, message }: { error?: string; message?: string
             id="serviceCode"
             name="serviceCode"
             required
+            aria-describedby={errorId}
+            aria-invalid={Boolean(state.error)}
             spellCheck={false}
           />
         </div>
         {state.error && (
-          <Alert variant="error">
+          <Alert id="auth-error" variant="error">
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         )}
@@ -82,15 +86,23 @@ export function LoginForm({ error, message }: { error?: string; message?: string
         <label className="mb-2 block text-sm font-semibold" htmlFor="email">
           Correo electrónico
         </label>
-        <Input autoComplete="email" id="email" name="email" required type="email" />
+        <Input
+          aria-describedby={[messageId, errorId].filter(Boolean).join(" ") || undefined}
+          aria-invalid={Boolean(state.error)}
+          autoComplete="email"
+          id="email"
+          name="email"
+          required
+          type="email"
+        />
       </div>
       {state.message && (
-        <Alert variant="success">
+        <Alert id="auth-message" variant="success">
           <AlertDescription>{state.message}</AlertDescription>
         </Alert>
       )}
       {state.error && (
-        <Alert variant="error">
+        <Alert id="auth-error" variant="error">
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}

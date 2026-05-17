@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
-import { getRequestUserContext } from "@/lib/auth/session";
+import { AuthError, requireUser } from "@/lib/auth/guards";
+import { cancelWorkRequestSchema, createWorkRequestSchema, getValidationMessage } from "@/lib/validation/schemas";
 import type { WorkRequest } from "@/types/domain";
+import { getRequestUserContext } from "@/lib/auth/session";
 
 export async function listCurrentUserWorkRequests() {
   let context;
@@ -61,15 +63,23 @@ export async function listVisibleWorkRequests() {
 }
 
 export async function createWorkRequestAction(requestDate: string): Promise<ActionResult> {
-  const context = await getRequestUserContext();
+  const parsed = createWorkRequestSchema.safeParse({ requestDate });
 
-  if (!context) {
-    return actionError("Debes iniciar sesión.");
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error));
+  }
+
+  let context;
+
+  try {
+    context = await requireUser();
+  } catch (error) {
+    return actionError(error instanceof AuthError ? error.message : "Debes iniciar sesión.");
   }
 
   const { error } = await context.db.from("work_requests").upsert({
     user_id: context.userId,
-    request_date: requestDate,
+    request_date: parsed.data.requestDate,
     status: "Open"
   });
 
@@ -83,17 +93,24 @@ export async function createWorkRequestAction(requestDate: string): Promise<Acti
 }
 
 export async function cancelWorkRequestAction(formData: FormData): Promise<ActionResult> {
-  const context = await getRequestUserContext();
-  const requestId = String(formData.get("requestId"));
+  const parsed = cancelWorkRequestSchema.safeParse({ requestId: formData.get("requestId") });
 
-  if (!context) {
-    return actionError("Debes iniciar sesión.");
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error));
+  }
+
+  let context;
+
+  try {
+    context = await requireUser();
+  } catch (error) {
+    return actionError(error instanceof AuthError ? error.message : "Debes iniciar sesión.");
   }
 
   const { error } = await context.db
     .from("work_requests")
     .update({ status: "Cancelled" })
-    .eq("id", requestId)
+    .eq("id", parsed.data.requestId)
     .eq("user_id", context.userId)
     .eq("status", "Open");
 

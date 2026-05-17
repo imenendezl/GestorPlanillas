@@ -118,6 +118,31 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  transform: translateY(-150%);
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+
+:focus {
+  scroll-margin-top: 5rem;
+  scroll-margin-bottom: 5rem;
+}
+
 .dark body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));

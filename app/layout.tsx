@@ -37,6 +37,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider>
           <OfflineSyncProvider>
             <ServiceWorkerRegistration />
+            <a className="skip-link" href="#main-content">
+              Saltar al contenido
+            </a>
             {children}
             <Toaster />
           </OfflineSyncProvider>

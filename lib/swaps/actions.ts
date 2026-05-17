@@ -5,6 +5,12 @@ import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/res
 import { getRequestUserContext } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateShift } from "@/lib/validation/shift-rules";
+import {
+  acceptSwapRequestSchema,
+  createSwapRequestSchema,
+  getValidationMessage,
+  updateSwapSignatureSchema
+} from "@/lib/validation/schemas";
 import { getSignatureStatus } from "@/lib/swaps/utils";
 import type { Database } from "@/types/database";
 import type { Shift, ShiftCode, SwapMode, SwapRequest } from "@/types/domain";
@@ -100,14 +106,22 @@ export async function listSignaturePendingSwapRequests() {
 
 export async function createSwapRequestAction(formData: FormData): Promise<ActionResult> {
   const context = await getRequestUserContext();
-  const shiftId = String(formData.get("shiftId"));
-  const mode = parseSwapMode(formData.get("mode"));
-  const offeredShiftCodes = String(formData.get("offeredShiftCodes")).split("+") as ShiftCode[];
-  const proposedDates = parseDates(formData.get("proposedDates"));
+  const parsed = createSwapRequestSchema.safeParse({
+    shiftId: formData.get("shiftId"),
+    mode: parseSwapMode(formData.get("mode")),
+    offeredShiftCodes: String(formData.get("offeredShiftCodes") ?? "").split("+"),
+    proposedDates: parseDates(formData.get("proposedDates"))
+  });
 
   if (!context) {
     return actionError("Debes iniciar sesión.");
   }
+
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error, "Solicitud no válida."));
+  }
+
+  const { shiftId, mode, offeredShiftCodes, proposedDates } = parsed.data;
 
   if (mode === "Exchange" && proposedDates.length === 0) {
     return actionError("Elige al menos un día para ofrecer a cambio.");
@@ -166,16 +180,24 @@ function validateAppliedShift(date: string, shiftCodes: ShiftCode[], existingShi
 export async function acceptSwapRequestAction(formData: FormData): Promise<ActionResult> {
   const context = await getRequestUserContext();
   const adminClient = createAdminClient();
-  const requestId = String(formData.get("requestId"));
-  const acceptedDate = String(formData.get("acceptedDate") ?? "");
+  const parsed = acceptSwapRequestSchema.safeParse({
+    requestId: formData.get("requestId"),
+    acceptedDate: String(formData.get("acceptedDate") ?? "")
+  });
 
   if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error, "Solicitud no válida."));
+  }
+
   if (!adminClient) {
     return actionError("No se pudo aplicar el cambio: falta configuración de servicio.");
   }
+
+  const { requestId, acceptedDate } = parsed.data;
 
   const { data: request } = await adminClient
     .from("swap_requests")
@@ -276,12 +298,20 @@ export async function acceptSwapRequestAction(formData: FormData): Promise<Actio
 
 export async function updateSwapSignatureAction(formData: FormData): Promise<ActionResult> {
   const context = await getRequestUserContext();
-  const requestId = String(formData.get("requestId"));
-  const signed = String(formData.get("signed")) === "true";
+  const parsed = updateSwapSignatureSchema.safeParse({
+    requestId: formData.get("requestId"),
+    signed: String(formData.get("signed")) === "true"
+  });
 
   if (!context) {
     return actionError("Debes iniciar sesión.");
   }
+
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error, "Firma no válida."));
+  }
+
+  const { requestId, signed } = parsed.data;
 
   const { data: request } = await context.db
     .from("swap_requests")
@@ -312,16 +342,22 @@ export async function updateSwapSignatureAction(formData: FormData): Promise<Act
 
 export async function cancelSwapRequestAction(formData: FormData): Promise<ActionResult> {
   const context = await getRequestUserContext();
-  const requestId = String(formData.get("requestId"));
+  const parsed = acceptSwapRequestSchema.pick({ requestId: true }).safeParse({
+    requestId: formData.get("requestId")
+  });
 
   if (!context) {
     return actionError("Debes iniciar sesión.");
   }
 
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error, "Solicitud no válida."));
+  }
+
   const { error } = await context.db
     .from("swap_requests")
     .update({ status: "Cancelled" })
-    .eq("id", requestId)
+    .eq("id", parsed.data.requestId)
     .eq("requester_id", context.userId)
     .eq("status", "Open");
 

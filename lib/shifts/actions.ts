@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, type ActionResult } from "@/lib/actions/result";
-import { getRequestUserContext } from "@/lib/auth/session";
+import { AuthError, requireUser } from "@/lib/auth/guards";
 import { addDays, toDateKey } from "@/lib/utils/date";
 import { normalizeShiftCodes, parseBulkShiftSequence } from "@/lib/utils/shift";
+import { bulkCreateShiftsSchema, deleteShiftSchema, getValidationMessage, saveShiftSchema } from "@/lib/validation/schemas";
 import type { Shift, ShiftCode } from "@/types/domain";
+import { getRequestUserContext } from "@/lib/auth/session";
 
 export async function listCurrentUserShifts() {
   let context;
@@ -35,13 +37,6 @@ export async function listCurrentUserShifts() {
 }
 
 export async function saveShiftAction(formData: FormData): Promise<ActionResult> {
-  const context = await getRequestUserContext();
-
-  if (!context) {
-    return actionError("Debes iniciar sesión.");
-  }
-
-  const shiftDate = String(formData.get("shiftDate"));
   let shiftCodes: ShiftCode[];
 
   try {
@@ -50,13 +45,30 @@ export async function saveShiftAction(formData: FormData): Promise<ActionResult>
     return actionError(error instanceof Error ? error.message : "Turno no válido.");
   }
 
+  const parsed = saveShiftSchema.safeParse({
+    shiftDate: formData.get("shiftDate"),
+    shiftCodes
+  });
+
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error, "Turno no válido."));
+  }
+
+  let context;
+
+  try {
+    context = await requireUser();
+  } catch (error) {
+    return actionError(error instanceof AuthError ? error.message : "Debes iniciar sesión.");
+  }
+
   const { error } = await context.db
     .from("shifts")
     .upsert(
       {
         user_id: context.userId,
-        shift_date: shiftDate,
-        shift_codes: shiftCodes
+        shift_date: parsed.data.shiftDate,
+        shift_codes: parsed.data.shiftCodes
       },
       { onConflict: "user_id,shift_date" }
     );
@@ -77,17 +89,24 @@ export async function saveShiftForDateAction(shiftDate: string, shiftCodes: Shif
 }
 
 export async function deleteShiftAction(formData: FormData): Promise<ActionResult> {
-  const context = await getRequestUserContext();
-  const shiftId = String(formData.get("shiftId"));
+  const parsed = deleteShiftSchema.safeParse({ shiftId: formData.get("shiftId") });
 
-  if (!context) {
-    return actionError("Debes iniciar sesión.");
+  if (!parsed.success) {
+    return actionError(getValidationMessage(parsed.error, "Turno no válido."));
+  }
+
+  let context;
+
+  try {
+    context = await requireUser();
+  } catch (error) {
+    return actionError(error instanceof AuthError ? error.message : "Debes iniciar sesión.");
   }
 
   const { error } = await context.db
     .from("shifts")
     .delete()
-    .eq("id", shiftId)
+    .eq("id", parsed.data.shiftId)
     .eq("user_id", context.userId);
 
   if (error) {
@@ -99,13 +118,18 @@ export async function deleteShiftAction(formData: FormData): Promise<ActionResul
 }
 
 export async function bulkCreateShiftsAction(formData: FormData) {
-  const context = await getRequestUserContext();
-  const startDate = new Date(`${String(formData.get("startDate"))}T00:00:00`);
-  const sequence = parseBulkShiftSequence(String(formData.get("sequence") ?? ""));
+  const parsed = bulkCreateShiftsSchema.safeParse({
+    startDate: formData.get("startDate"),
+    sequence: formData.get("sequence")
+  });
 
-  if (!context) {
-    throw new Error("Debes iniciar sesión.");
+  if (!parsed.success) {
+    throw new Error(getValidationMessage(parsed.error));
   }
+
+  const context = await requireUser();
+  const startDate = new Date(`${parsed.data.startDate}T00:00:00`);
+  const sequence = parseBulkShiftSequence(parsed.data.sequence);
 
   const rows = sequence.map((shiftCodes, index) => ({
     user_id: context.userId,

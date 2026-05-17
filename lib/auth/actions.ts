@@ -6,7 +6,17 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encodePendingRegistration, PENDING_REGISTRATION_COOKIE } from "@/lib/auth/registration";
 import { DEV_ADMIN_COOKIE, getRequestUserContext } from "@/lib/auth/session";
-import type { Position } from "@/types/domain";
+import { toUserProfile } from "@/lib/auth/dto";
+import {
+  authEmailSchema,
+  getValidationMessage,
+  legacySignUpSchema,
+  profileSchema,
+  registrationSchema,
+  signInSchema,
+  updateEmailSchema,
+  updatePasswordSchema
+} from "@/lib/validation/schemas";
 
 export type AuthFlowState = {
   step: "email" | "register";
@@ -69,8 +79,16 @@ async function signInDevAdmin(email: string) {
 
 export async function signInAction(formData: FormData) {
   const supabase = await createClient();
-  const email = getString(formData, "email");
-  const password = getString(formData, "password");
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password")
+  });
+
+  if (!parsed.success) {
+    redirect(`/login?error=${encodeURIComponent(getValidationMessage(parsed.error))}`);
+  }
+
+  const { email, password } = parsed.data;
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -85,11 +103,13 @@ export async function continueWithEmailAction(
   _previousState: AuthFlowState,
   formData: FormData
 ): Promise<AuthFlowState> {
-  const email = normalizeEmail(getString(formData, "email"));
+  const parsed = authEmailSchema.safeParse({ email: formData.get("email") });
 
-  if (!email) {
-    return { step: "email", email, error: "Indica un correo válido." };
+  if (!parsed.success) {
+    return { step: "email", email: "", error: getValidationMessage(parsed.error) };
   }
+
+  const email = parsed.data.email;
 
   if (await signInDevAdmin(email)) {
     redirect("/dashboard");
@@ -143,23 +163,22 @@ export async function completeRegistrationAction(
   _previousState: AuthFlowState,
   formData: FormData
 ): Promise<AuthFlowState> {
-  const email = normalizeEmail(getString(formData, "email"));
-  const firstName = getString(formData, "firstName");
-  const lastName = getString(formData, "lastName");
-  const serviceCode = getString(formData, "serviceCode").replace(/\s+/g, "").toUpperCase();
+  const parsed = registrationSchema.safeParse({
+    email: formData.get("email"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    serviceCode: formData.get("serviceCode")
+  });
 
-  if (!email) {
-    return { step: "email", email, error: "Indica un correo válido." };
-  }
-
-  if (!firstName || !lastName || !serviceCode) {
+  if (!parsed.success) {
     return {
       step: "register",
-      email,
-      error: "Completa nombre, apellidos y código de servicio."
+      email: String(formData.get("email") ?? ""),
+      error: getValidationMessage(parsed.error)
     };
   }
 
+  const { email, firstName, lastName, serviceCode } = parsed.data;
   const cookieStore = await cookies();
   const adminClient = createAdminClient();
   const { data: existingProfile } = adminClient
@@ -226,12 +245,20 @@ export async function completeRegistrationAction(
 
 export async function signUpAction(formData: FormData) {
   const supabase = await createClient();
-  const email = getString(formData, "email");
-  const password = getString(formData, "password");
-  const firstName = getString(formData, "firstName");
-  const lastName = getString(formData, "lastName");
-  const unit = getString(formData, "unit");
-  const position = getString(formData, "position") as Position;
+  const parsed = legacySignUpSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    unit: formData.get("unit"),
+    position: formData.get("position")
+  });
+
+  if (!parsed.success) {
+    redirect(`/register?error=${encodeURIComponent(getValidationMessage(parsed.error))}`);
+  }
+
+  const { email, password, firstName, lastName, unit, position } = parsed.data;
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -313,31 +340,27 @@ export async function getCurrentProfile() {
     return null;
   }
 
-  return {
-    id: data.id,
-    firstName: data.first_name,
-    lastName: data.last_name,
-    email: data.email,
-    unit: data.unit,
-    position: data.position,
-    role: data.role
-  };
+  return toUserProfile(data);
 }
 
 export async function updateProfileAction(formData: FormData) {
   const context = await getRequestUserContext();
-  const firstName = getString(formData, "firstName");
-  const lastName = getString(formData, "lastName");
-  const unit = getString(formData, "unit");
-  const position = getString(formData, "position") as Position;
+  const parsed = profileSchema.safeParse({
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    unit: formData.get("unit"),
+    position: formData.get("position")
+  });
 
   if (!context) {
     return { ok: false, message: "Debes iniciar sesión." };
   }
 
-  if (!firstName || !lastName || !unit || !position) {
-    return { ok: false, message: "Completa todos los campos del perfil." };
+  if (!parsed.success) {
+    return { ok: false, message: getValidationMessage(parsed.error) };
   }
+
+  const { firstName, lastName, unit, position } = parsed.data;
 
   const { error } = await context.db
     .from("users")
@@ -359,15 +382,17 @@ export async function updateProfileAction(formData: FormData) {
 export async function updateEmailAction(formData: FormData) {
   const context = await getRequestUserContext();
   const supabase = await createClient();
-  const email = getString(formData, "email").toLowerCase();
+  const parsed = updateEmailSchema.safeParse({ email: formData.get("email") });
 
   if (!context) {
     return { ok: false, message: "Debes iniciar sesión." };
   }
 
-  if (!email) {
-    return { ok: false, message: "Indica un correo válido." };
+  if (!parsed.success) {
+    return { ok: false, message: getValidationMessage(parsed.error) };
   }
+
+  const { email } = parsed.data;
 
   if (context.isDevBypass) {
     const { error } = await context.db.from("users").update({ email }).eq("id", context.userId);
@@ -387,21 +412,21 @@ export async function updateEmailAction(formData: FormData) {
 export async function updatePasswordAction(formData: FormData) {
   const context = await getRequestUserContext();
   const supabase = await createClient();
-  const password = getString(formData, "password");
+  const parsed = updatePasswordSchema.safeParse({ password: formData.get("password") });
 
   if (!context) {
     return { ok: false, message: "Debes iniciar sesión." };
   }
 
-  if (password.length < 6) {
-    return { ok: false, message: "La contraseña debe tener al menos 6 caracteres." };
+  if (!parsed.success) {
+    return { ok: false, message: getValidationMessage(parsed.error) };
   }
 
   if (context.isDevBypass) {
     return { ok: false, message: "El acceso de desarrollo no permite cambiar contraseña." };
   }
 
-  const { error } = await supabase.auth.updateUser({ password });
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
 
   if (error) {
     return { ok: false, message: "No se pudo actualizar la contraseña." };

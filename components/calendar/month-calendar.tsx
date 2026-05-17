@@ -5,17 +5,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { getMonthDays, spanishWeekdays, toDateKey } from "@/lib/utils/date";
 import { saveShiftClientAction } from "@/lib/offline/client-actions";
-import { formatShiftCodes, isValidShiftCombination, normalizeShiftCodes, shiftDefinitions, sortShiftCodes } from "@/lib/utils/shift";
+import { normalizeShiftCodes, shiftDefinitions } from "@/lib/utils/shift";
 import { getShiftWarningsByDate } from "@/lib/validation/shift-warnings";
 import { getCalendarSwapAnnotations, groupCalendarSwapAnnotationsByDate, type CalendarSwapAnnotation } from "@/lib/calendar/swap-annotations";
+import { formatSwapAnnotationDetail, getNextQuickShiftCodes, type QuickSelection } from "@/lib/calendar/calendar-controller";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ShiftCell } from "./shift-cell";
 import { useOfflineShifts } from "@/lib/offline/use-offline-shifts";
 import type { Shift, ShiftCode, SwapRequest, UserProfile } from "@/types/domain";
 
-const DOUBLE_SHIFT_WINDOW_MS = 1400;
-const combinableShiftCodes = new Set<ShiftCode>(["M", "T", "N"]);
 const monthOptions = [
   "enero",
   "febrero",
@@ -45,7 +44,7 @@ export function MonthCalendar({
   const [optimisticShiftCodes, setOptimisticShiftCodes] = useState<Record<string, ShiftCode[] | null>>({});
   const [, startTransition] = useTransition();
   const calendarRef = useRef<HTMLDivElement>(null);
-  const lastQuickSelectionRef = useRef<{ at: number; dateKey: string; codes: ShiftCode[] } | null>(null);
+  const lastQuickSelectionRef = useRef<QuickSelection | null>(null);
   const { days } = useMemo(() => getMonthDays(activeDate), [activeDate]);
   const visibleShifts = useOfflineShifts(shifts);
   const shiftsByDate = useMemo(() => new Map(visibleShifts.map((shift) => [shift.shiftDate, shift])), [visibleShifts]);
@@ -145,22 +144,16 @@ export function MonthCalendar({
 
   function applyQuickCode(code: ShiftCode) {
     const now = Date.now();
-    const lastQuickSelection = lastQuickSelectionRef.current;
-    const canCreateDoubleShift =
-      lastQuickSelection &&
-      selectedDate &&
-      lastQuickSelection.dateKey === selectedDate &&
-      now - lastQuickSelection.at <= DOUBLE_SHIFT_WINDOW_MS &&
-      lastQuickSelection.codes.length === 1 &&
-      combinableShiftCodes.has(lastQuickSelection.codes[0]) &&
-      combinableShiftCodes.has(code) &&
-      lastQuickSelection.codes[0] !== code;
-    const candidateCodes = canCreateDoubleShift ? sortShiftCodes([lastQuickSelection.codes[0], code]) : [code];
-    const nextCodes = isValidShiftCombination(candidateCodes) ? candidateCodes : [code];
-
     if (!selectedDate) {
       return;
     }
+
+    const nextCodes = getNextQuickShiftCodes({
+      code,
+      now,
+      selectedDate,
+      lastSelection: lastQuickSelectionRef.current
+    });
 
     lastQuickSelectionRef.current = { at: now, dateKey: selectedDate, codes: nextCodes };
     saveCodesForDate(selectedDate, nextCodes);
@@ -176,19 +169,6 @@ export function MonthCalendar({
     nextDate.setDate(currentDate.getDate() + offset);
     setSelectedDate(toDateKey(nextDate));
     setActiveDate(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
-  }
-
-  function formatSwapAnnotationDetail(annotation: CalendarSwapAnnotation) {
-    const currentTurn = annotation.shiftCodes.length > 0 ? formatShiftCodes(annotation.shiftCodes) : "turno no registrado";
-
-    if (annotation.exchangeKind === "openChange" || !annotation.relatedDate) {
-      return `${annotation.detail} Cambio abierto. Turno original: ${currentTurn}.`;
-    }
-
-    const relatedTurn = annotation.relatedShiftCodes.length > 0 ? formatShiftCodes(annotation.relatedShiftCodes) : "turno no registrado";
-    const relatedDate = dayLabelFormatter.format(new Date(`${annotation.relatedDate}T00:00:00`));
-
-    return `${annotation.detail} A cambio del ${relatedDate}, turno ${relatedTurn}. Turno de este día: ${currentTurn}.`;
   }
 
   return (
@@ -297,7 +277,7 @@ export function MonthCalendar({
                   key={annotation.id}
                 >
                   <p className="font-semibold">{annotation.label}</p>
-                  <p className="text-muted-foreground">{formatSwapAnnotationDetail(annotation)}</p>
+                  <p className="text-muted-foreground">{formatSwapAnnotationDetail(annotation, dayLabelFormatter)}</p>
                 </div>
               ))}
             </div>

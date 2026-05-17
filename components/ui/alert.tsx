@@ -19,7 +19,14 @@ const alertVariants = cva("relative w-full rounded-lg border px-4 py-3 text-sm",
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {}
 
 export function Alert({ className, variant, ...props }: AlertProps) {
-  return <div className={cn(alertVariants({ variant }), className)} role="status" {...props} />;
+  return (
+    <div
+      aria-live={variant === "error" ? "assertive" : "polite"}
+      className={cn(alertVariants({ variant }), className)}
+      role={variant === "error" ? "alert" : "status"}
+      {...props}
+    />
+  );
 }
 
 export function AlertTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
