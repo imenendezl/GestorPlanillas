@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BriefcaseBusiness, CalendarDays, Repeat2 } from "lucide-react";
+import { CalendarDays, Repeat2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { UserProfile } from "@/types/domain";
 
 const items = [
   { href: "/dashboard", label: "Planilla", icon: CalendarDays },
-  { href: "/requests", label: "Solicitudes", icon: Repeat2 },
-  { href: "/work-offers", label: "Ofrecer", icon: BriefcaseBusiness }
+  { href: "/requests", label: "Solicitudes", icon: Repeat2 }
 ];
 
 export function MobileTabNav({ profile }: { profile: UserProfile }) {
@@ -18,9 +17,9 @@ export function MobileTabNav({ profile }: { profile: UserProfile }) {
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t bg-card/96 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2 text-card-foreground shadow-[0_-10px_32px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:hidden dark:shadow-[0_-10px_32px_rgba(0,0,0,0.28)]"
     >
-      <div className="mx-auto grid max-w-sm grid-cols-3 gap-1 rounded-apple border bg-card/92 p-1.5 text-card-foreground shadow-[0_-18px_42px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:shadow-[0_-18px_42px_rgba(0,0,0,0.28)]">
+      <div className="mx-auto grid max-w-sm grid-cols-2 gap-2">
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -29,7 +28,7 @@ export function MobileTabNav({ profile }: { profile: UserProfile }) {
             <Link
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[0.68rem] font-semibold leading-tight text-muted-foreground transition hover:bg-accent hover:text-accent-foreground active:scale-95",
+                "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-xs font-semibold leading-tight text-muted-foreground transition hover:bg-accent hover:text-accent-foreground active:scale-95",
                 active && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
               )}
               href={item.href}

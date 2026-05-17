@@ -8,7 +8,13 @@ import { listCurrentUserShifts } from "@/lib/shifts/actions";
 import { listCurrentUserSwapRequests, listSignaturePendingSwapRequests, listVisibleSwapRequests } from "@/lib/swaps/actions";
 import { listVisibleWorkRequests } from "@/lib/work-requests/actions";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams: Promise<{ date?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const selectedDate = typeof params.date === "string" ? params.date : null;
   const [profileResult, shiftsResult, swapsResult, ownSwapsResult, workRequestsResult, signatureRequestsResult] = await Promise.allSettled([
     getCurrentProfile(),
     listCurrentUserShifts(),
@@ -42,7 +48,7 @@ export default async function DashboardPage() {
     >
       <DashboardSnapshotWriter profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
       <div className="space-y-8">
-        <MonthCalendar profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
+        <MonthCalendar initialSelectedDate={selectedDate} profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
       </div>
     </AppShell>
   );

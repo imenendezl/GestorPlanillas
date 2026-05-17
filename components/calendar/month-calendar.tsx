@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { getMonthDays, spanishWeekdays, toDateKey } from "@/lib/utils/date";
 import { saveShiftClientAction } from "@/lib/offline/client-actions";
@@ -31,16 +31,19 @@ const monthOptions = [
 ];
 
 export function MonthCalendar({
+  initialSelectedDate,
   profile,
   shifts,
   swapRequests = []
 }: {
+  initialSelectedDate?: string | null;
   profile?: Pick<UserProfile, "id">;
   shifts: Shift[];
   swapRequests?: SwapRequest[];
 }) {
-  const [activeDate, setActiveDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const parsedInitialDate = useMemo(() => parseDateKey(initialSelectedDate), [initialSelectedDate]);
+  const [activeDate, setActiveDate] = useState(() => parsedInitialDate ?? new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(() => (parsedInitialDate ? toDateKey(parsedInitialDate) : null));
   const [optimisticShiftCodes, setOptimisticShiftCodes] = useState<Record<string, ShiftCode[] | null>>({});
   const [, startTransition] = useTransition();
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -99,6 +102,15 @@ export function MonthCalendar({
     return () => document.removeEventListener("mousedown", closeActionsOnOutsideClick);
   }, []);
 
+  useEffect(() => {
+    if (!parsedInitialDate) {
+      return;
+    }
+
+    setSelectedDate(toDateKey(parsedInitialDate));
+    setActiveDate(new Date(parsedInitialDate.getFullYear(), parsedInitialDate.getMonth(), 1));
+  }, [parsedInitialDate]);
+
   function moveMonth(offset: number) {
     setActiveDate(new Date(activeDate.getFullYear(), activeDate.getMonth() + offset, 1));
   }
@@ -109,6 +121,11 @@ export function MonthCalendar({
 
   function selectYear(year: number) {
     setActiveDate((date) => new Date(year, date.getMonth(), 1));
+  }
+
+  function goToCurrentMonth() {
+    const today = new Date();
+    setActiveDate(new Date(today.getFullYear(), today.getMonth(), 1));
   }
 
   function saveCodesForDate(shiftDate: string, codes: ShiftCode[]) {
@@ -178,7 +195,11 @@ export function MonthCalendar({
           <Button aria-label="Mes anterior" className="h-10 min-h-10 w-10 min-w-10 sm:h-11 sm:min-h-11 sm:w-11 sm:min-w-11" onClick={() => moveMonth(-1)} size="icon" type="button" variant="outline">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center justify-center gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+          <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center justify-center gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+            <Button aria-label="Ir al mes actual" className="h-10 min-h-10 w-10 min-w-10 rounded-lg sm:h-11 sm:min-h-11 sm:w-auto sm:min-w-11 sm:px-3 lg:min-h-10" onClick={goToCurrentMonth} size="icon" type="button" variant="outline">
+              <CalendarClock className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Hoy</span>
+            </Button>
             <select
               aria-label="Seleccionar mes"
               className="calendar-select min-h-10 w-full min-w-0 rounded-lg border bg-background px-2 text-center text-sm font-semibold capitalize text-foreground outline-none transition focus:ring-2 focus:ring-ring min-[420px]:w-36 sm:min-h-11 sm:w-44 sm:px-3 sm:text-lg lg:min-h-10 lg:text-base"
@@ -256,7 +277,7 @@ export function MonthCalendar({
         </CardContent>
       </Card>
       {selectedDate && (
-        <div className="sticky bottom-[4.65rem] z-30 mt-3 rounded-[1.35rem] border border-white/70 bg-card/95 p-2 shadow-[0_18px_44px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 lg:static lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5.7rem)] z-30 mt-3 rounded-[1.35rem] border border-white/70 bg-card/95 p-2 shadow-[0_18px_44px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 lg:static lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
           <div className="mb-2 flex items-center justify-between gap-3 px-1 lg:hidden">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-muted-foreground">Día seleccionado</p>
@@ -310,4 +331,18 @@ export function MonthCalendar({
       )}
     </div>
   );
+}
+
+function parseDateKey(dateKey?: string | null) {
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    return null;
+  }
+
+  const date = new Date(`${dateKey}T00:00:00`);
+
+  if (Number.isNaN(date.getTime()) || toDateKey(date) !== dateKey) {
+    return null;
+  }
+
+  return date;
 }

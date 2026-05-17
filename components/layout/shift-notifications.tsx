@@ -24,25 +24,31 @@ export function ShiftNotifications({
   const warnings = getShiftWarnings(visibleShifts);
   const totalNotifications = warnings.length + swapRequests.length + workRequests.length + signatureRequests.length;
 
-  if (totalNotifications === 0) {
-    return null;
-  }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          aria-label={`${totalNotifications} aviso${totalNotifications === 1 ? "" : "s"} pendiente${totalNotifications === 1 ? "" : "s"}`}
-          className="relative border-0 bg-black/8 text-foreground hover:bg-black/12 hover:text-foreground dark:bg-white/12 dark:text-white dark:hover:bg-white/22 dark:hover:text-white"
+          aria-label={totalNotifications > 0 ? `${totalNotifications} aviso${totalNotifications === 1 ? "" : "s"} pendiente${totalNotifications === 1 ? "" : "s"}` : "Avisos, sin pendientes"}
+          className="relative rounded-apple border-0 bg-transparent text-card-foreground shadow-none hover:bg-transparent hover:text-card-foreground [&_svg]:size-6"
           size="icon"
           type="button"
-          variant="outline"
+          variant="ghost"
         >
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+          <Bell className="h-5 w-5" />
+          {totalNotifications > 0 && (
+            <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[0.68rem] font-bold leading-none text-destructive-foreground">
+              {totalNotifications > 9 ? "9+" : totalNotifications}
+            </span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
+        {totalNotifications === 0 && (
+          <DropdownMenuItem className="block whitespace-normal py-3">
+            <p className="text-sm font-semibold">Sin avisos pendientes</p>
+            <p className="mt-1 text-xs text-muted-foreground">Aquí aparecerán cambios, firmas y avisos de tu planilla.</p>
+          </DropdownMenuItem>
+        )}
         {signatureRequests.map((request) => (
           <DropdownMenuItem asChild className="block whitespace-normal py-2" key={`signature-${request.id}`}>
             <Link href="/requests">
@@ -63,16 +69,18 @@ export function ShiftNotifications({
         ))}
         {workRequests.map((request) => (
           <DropdownMenuItem asChild className="block whitespace-normal py-2" key={`work-${request.id}`}>
-            <Link href="/work-offers">
+            <Link href="/requests#disponibilidad">
               <p className="text-sm font-semibold">Día disponible</p>
               <p className="mt-1 text-xs text-muted-foreground">Hay disponibilidad para cambios el {formatSpanishDate(request.requestDate)}.</p>
             </Link>
           </DropdownMenuItem>
         ))}
         {warnings.map((warning) => (
-          <DropdownMenuItem className="block whitespace-normal py-2" key={`${warning.date}-${warning.message}`}>
-            <p className="text-sm font-semibold">{warning.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{warning.message}</p>
+          <DropdownMenuItem asChild className="block whitespace-normal py-2" key={`${warning.date}-${warning.message}`}>
+            <Link href={`/dashboard?date=${warning.date}`}>
+              <p className="text-sm font-semibold">{warning.label}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{warning.message}</p>
+            </Link>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
