@@ -7,7 +7,15 @@ import { listCurrentUserShifts } from "@/lib/shifts/actions";
 import { listCurrentUserSwapRequests, listSignaturePendingSwapRequests, listVisibleSwapRequests } from "@/lib/swaps/actions";
 import { listCurrentUserWorkRequests, listVisibleWorkRequests } from "@/lib/work-requests/actions";
 
-export default async function RequestsPage() {
+export default async function RequestsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ filter?: string | string[]; requestId?: string | string[]; shiftId?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialFilter = typeof params.filter === "string" ? params.filter : null;
+  const highlightedRequestId = typeof params.requestId === "string" ? params.requestId : null;
+  const initialShiftId = typeof params.shiftId === "string" ? params.shiftId : null;
   const [profile, shifts, ownRequests, visibleRequests, signatureRequests, ownWorkRequests, workRequests] = await Promise.all([
     getCurrentProfile(),
     listCurrentUserShifts(),
@@ -36,6 +44,9 @@ export default async function RequestsPage() {
           <h1 className="font-display text-3xl font-semibold">Cambios de turno</h1>
         </div>
         <RequestsPanel
+          highlightedRequestId={highlightedRequestId}
+          initialFilter={initialFilter}
+          initialShiftId={initialShiftId}
           profile={profile}
           shifts={shifts}
           ownRequests={ownRequests}

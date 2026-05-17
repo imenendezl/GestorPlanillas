@@ -1,4 +1,4 @@
-import { formatSpanishDate } from "@/lib/utils/date";
+import { formatSpanishDayMonth } from "@/lib/utils/date";
 import { formatShiftCodes } from "@/lib/utils/shift";
 import { validateShift } from "./shift-rules";
 import type { Shift } from "@/types/domain";
@@ -25,7 +25,7 @@ export function getShiftWarnings(shifts: Array<Pick<Shift, "shiftDate" | "shiftC
       {
         date: shift.shiftDate,
         message: result.message,
-        label: `${formatSpanishDate(shift.shiftDate)} · ${formatShiftCodes(shift.shiftCodes)}`
+        label: `${formatSpanishDayMonth(shift.shiftDate)} · ${formatShiftCodes(shift.shiftCodes)}`
       }
     ];
   });

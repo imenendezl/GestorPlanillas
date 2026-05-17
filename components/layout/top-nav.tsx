@@ -87,7 +87,7 @@ export function TopNav({
 
           <Link
             href="/dashboard"
-            className="hidden min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition hover:bg-accent hover:text-accent-foreground sm:flex sm:text-base"
+            className="hidden min-h-11 min-w-0 items-center gap-2 rounded-apple px-3 text-sm font-semibold transition hover:bg-accent hover:text-accent-foreground sm:flex sm:text-base"
           >
             <CalendarDays className="h-5 w-5" />
             <span>Planillas</span>
@@ -108,7 +108,7 @@ export function TopNav({
             />
             {profile && (
               <form action={signOutAction}>
-                <Button className="min-h-11 rounded-lg px-4 text-sm" type="submit" variant="utility">
+                <Button className="min-h-11 rounded-apple px-4 text-sm" type="submit" variant="utility">
                   Salir
                 </Button>
               </form>

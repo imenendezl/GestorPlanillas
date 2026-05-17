@@ -4,16 +4,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
 const buttonVariants = cva(
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full text-center text-sm font-medium leading-snug transition active:scale-95 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-apple text-center text-sm font-medium leading-snug transition active:scale-95 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-white hover:bg-primary/90 hover:text-white dark:text-white dark:hover:text-white",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary: "border border-primary bg-transparent text-primary hover:bg-accent",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        utility: "rounded-lg bg-foreground px-4 py-2 text-background hover:bg-foreground/90 dark:bg-foreground dark:text-background"
+        utility: "rounded-apple bg-foreground px-4 py-2 text-background hover:bg-foreground/90 dark:bg-foreground dark:text-background"
       },
       size: {
         default: "px-5 py-2.5",

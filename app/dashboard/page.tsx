@@ -40,6 +40,7 @@ export default async function DashboardPage({
 
   return (
     <AppShell
+      mobileFullWidth
       profile={profile}
       shifts={shifts}
       signatureRequests={signatureRequests}
@@ -48,7 +49,14 @@ export default async function DashboardPage({
     >
       <DashboardSnapshotWriter profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
       <div className="space-y-8">
-        <MonthCalendar initialSelectedDate={selectedDate} profile={profile} shifts={shifts} swapRequests={ownSwapRequests} />
+        <MonthCalendar
+          initialSelectedDate={selectedDate}
+          profile={profile}
+          shifts={shifts}
+          signatureRequests={signatureRequests}
+          swapRequests={ownSwapRequests}
+          visibleSwapRequests={swapRequests}
+        />
       </div>
     </AppShell>
   );

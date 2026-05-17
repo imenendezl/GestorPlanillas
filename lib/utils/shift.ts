@@ -27,8 +27,8 @@ export const shiftDefinitions: ShiftDefinition[] = [
     label: "Tarde",
     shortLabel: "T",
     backgroundColor: "#f59e0b",
-    foregroundColor: "#1d1d1f",
-    colorClassName: "bg-amber-500 text-ink border-amber-500",
+    foregroundColor: "#ffffff",
+    colorClassName: "bg-amber-500 text-white border-amber-500",
     mutedColorClassName: "bg-amber-50 text-amber-950 border-amber-200 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800",
     order: 20
   },
@@ -45,7 +45,7 @@ export const shiftDefinitions: ShiftDefinition[] = [
   {
     code: "-",
     label: "Saliente",
-    shortLabel: "-",
+    shortLabel: "−",
     backgroundColor: "#71717a",
     foregroundColor: "#ffffff",
     colorClassName: "bg-zinc-500 text-white border-zinc-500",

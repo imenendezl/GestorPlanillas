@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { toast } from "sonner";
 import {
   createSwapRequestClientAction,
   createWorkRequestClientAction,
@@ -53,14 +52,7 @@ export function DayShiftModal({ date, shift, open, onClose }: DayShiftModalProps
     startTransition(async () => {
       const result = await action();
       if (result.ok) {
-        if (result.message.startsWith("Sin conexión")) {
-          toast.info(result.message);
-        } else {
-          toast.success(result.message);
-        }
         onClose();
-      } else {
-        toast.error(result.message);
       }
     });
   }

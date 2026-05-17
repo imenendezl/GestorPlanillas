@@ -38,7 +38,7 @@ export function LoginForm({ error, message }: { error?: string; message?: string
     return (
       <form action={registerAction} className="space-y-5">
         <input name="email" type="hidden" value={email} />
-        <div className="rounded-lg border border-black/10 bg-black/[0.03] px-4 py-3 text-sm text-black/70 dark:border-white/15 dark:bg-white/10 dark:text-white/75">
+        <div className="rounded-apple border border-black/10 bg-black/[0.03] px-4 py-3 text-sm text-black/70 dark:border-white/15 dark:bg-white/10 dark:text-white/75">
           {email}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

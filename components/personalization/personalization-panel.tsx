@@ -30,7 +30,7 @@ export function PersonalizationPanel() {
 
               return (
                 <Button
-                  className={cn("min-h-16 justify-between rounded-lg px-4", active && "ring-2 ring-ring")}
+                  className={cn("min-h-16 justify-between rounded-apple px-4", active && "ring-2 ring-ring")}
                   key={option.value}
                   onClick={() => setTheme(option.value)}
                   type="button"
@@ -53,10 +53,10 @@ export function PersonalizationPanel() {
           <CardDescription>Estas opciones llegarán más adelante.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-          <div className="rounded-lg border bg-background p-4">Colores por turno</div>
-          <div className="rounded-lg border bg-background p-4">Horas asociadas a M, T y N</div>
-          <div className="rounded-lg border bg-background p-4">Mostrar libres como L o en blanco</div>
-          <div className="rounded-lg border bg-background p-4">Mostrar salientes como - o L</div>
+          <div className="rounded-apple border bg-background p-4">Colores por turno</div>
+          <div className="rounded-apple border bg-background p-4">Horas asociadas a M, T y N</div>
+          <div className="rounded-apple border bg-background p-4">Mostrar libres como L o en blanco</div>
+          <div className="rounded-apple border bg-background p-4">Mostrar salientes como - o L</div>
         </CardContent>
       </Card>
     </div>

@@ -32,8 +32,8 @@ export function SideNav({ profile }: { profile: UserProfile }) {
           return (
             <Link
               className={cn(
-                "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition hover:bg-accent hover:text-accent-foreground",
-                active && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                "flex min-h-11 items-center gap-3 rounded-apple px-3 text-sm font-semibold transition hover:bg-accent hover:text-accent-foreground",
+                active && "bg-primary text-white hover:bg-primary hover:text-white dark:text-white dark:hover:text-white"
               )}
               href={item.href}
               key={item.href}

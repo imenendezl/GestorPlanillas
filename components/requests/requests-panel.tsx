@@ -8,7 +8,7 @@ import {
   createSwapRequestClientAction,
   updateSwapSignatureClientAction
 } from "@/lib/offline/client-actions";
-import { formatSpanishDate } from "@/lib/utils/date";
+import { formatSpanishDayMonth } from "@/lib/utils/date";
 import { formatShiftCodes, getShiftColorClassName } from "@/lib/utils/shift";
 import { filterOwnSwapRequests, getSuggestedExchangeDates } from "@/lib/swaps/utils";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ function signatureLabel(request: SwapRequest) {
 }
 
 function requestSummary(request: SwapRequest) {
-  const date = request.requestedDate ? formatSpanishDate(request.requestedDate) : "Día no disponible";
+  const date = request.requestedDate ? formatSpanishDayMonth(request.requestedDate) : "Día no disponible";
   const codes = request.requestedShiftCodes.length > 0 ? formatShiftCodes(request.requestedShiftCodes) : formatShiftCodes(request.offeredShiftCodes);
   return `${date} · ${codes}`;
 }
@@ -50,7 +50,7 @@ function previousShiftSummary(request: SwapRequest) {
 
   if (request.mode === "Exchange" && request.acceptedDate) {
     const codes = request.accepterPreviousShiftCodes.length > 0 ? formatShiftCodes(request.accepterPreviousShiftCodes) : "turno no registrado";
-    return `${request.accepterName ?? "La otra persona"} tenía ${codes} el ${formatSpanishDate(request.acceptedDate)}.`;
+    return `${request.accepterName ?? "La otra persona"} tenía ${codes} el ${formatSpanishDayMonth(request.acceptedDate)}.`;
   }
 
   const codes = request.accepterPreviousShiftCodes.length > 0 ? formatShiftCodes(request.accepterPreviousShiftCodes) : "Libre";
@@ -70,20 +70,28 @@ async function showResult(result: { ok: boolean; message: string }) {
 }
 
 export function RequestsPanel({
+  highlightedRequestId,
+  initialFilter,
+  initialShiftId,
   profile,
   shifts,
   ownRequests,
   visibleRequests
 }: {
+  highlightedRequestId?: string | null;
+  initialFilter?: string | null;
+  initialShiftId?: string | null;
   profile: UserProfile;
   shifts: Shift[];
   ownRequests: SwapRequest[];
   visibleRequests: SwapRequest[];
 }) {
-  const [selectedShiftId, setSelectedShiftId] = useState(shifts.find((shift) => !shift.shiftCodes.includes("L"))?.id ?? "");
+  const defaultShiftId = shifts.find((shift) => shift.id === initialShiftId && !shift.shiftCodes.includes("L"))?.id ?? shifts.find((shift) => !shift.shiftCodes.includes("L"))?.id ?? "";
+  const defaultFilter = initialFilter === "pending" || initialFilter === "signature" ? initialFilter : "all";
+  const [selectedShiftId, setSelectedShiftId] = useState(defaultShiftId);
   const [mode, setMode] = useState<SwapMode>("Exchange");
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(defaultFilter);
   const [acceptedDates, setAcceptedDates] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const selectedShift = shifts.find((shift) => shift.id === selectedShiftId) ?? null;
@@ -145,7 +153,7 @@ export function RequestsPanel({
             {shifts.filter((shift) => !shift.shiftCodes.includes("L")).slice(0, 18).map((shift) => (
               <button
                 className={cn(
-                  "flex min-h-14 items-center justify-between rounded-lg border bg-background px-3 text-left transition",
+                  "flex min-h-14 items-center justify-between rounded-apple border bg-background px-3 text-left transition",
                   selectedShiftId === shift.id && "border-primary ring-2 ring-ring/30"
                 )}
                 key={shift.id}
@@ -153,7 +161,7 @@ export function RequestsPanel({
                 type="button"
               >
                 <span>
-                  <span className="block text-sm font-semibold">{formatSpanishDate(shift.shiftDate)}</span>
+                  <span className="block text-sm font-semibold">{formatSpanishDayMonth(shift.shiftDate)}</span>
                   <span className="block text-xs text-muted-foreground">{formatShiftCodes(shift.shiftCodes)}</span>
                 </span>
                 <Badge className={getShiftColorClassName(shift.shiftCodes)}>{shift.shiftCodes.join("+")}</Badge>
@@ -180,12 +188,12 @@ export function RequestsPanel({
                   const active = offerDates.includes(date);
                   return (
                     <button
-                      className={cn("min-h-12 rounded-lg border px-3 text-left text-sm transition", active && "border-primary bg-accent text-accent-foreground")}
+                      className={cn("min-h-12 rounded-apple border px-3 text-left text-sm transition", active && "border-primary bg-accent text-accent-foreground")}
                       key={date}
                       onClick={() => toggleDate(date)}
                       type="button"
                     >
-                      {formatSpanishDate(date)}
+                      {formatSpanishDayMonth(date)}
                     </button>
                   );
                 })}
@@ -217,15 +225,15 @@ export function RequestsPanel({
           </div>
           <div className="space-y-3">
             {filteredOwnRequests.length === 0 ? (
-              <p className="rounded-lg border bg-background p-4 text-sm text-muted-foreground">No hay solicitudes en este filtro.</p>
+              <p className="rounded-apple border bg-background p-4 text-sm text-muted-foreground">No hay solicitudes en este filtro.</p>
             ) : (
               filteredOwnRequests.map((request) => (
-                <div className="rounded-lg border bg-background p-4" key={request.id}>
+                <div className={cn("rounded-apple border bg-background p-4", highlightedRequestId === request.id && "border-primary ring-2 ring-ring/30")} id={`request-${request.id}`} key={request.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">{request.mode === "Exchange" ? "Intercambio" : "Cobertura simple"}</p>
                       <p className="mt-1 text-sm font-semibold text-foreground">{requestSummary(request)}</p>
-                      <p className="text-xs text-muted-foreground">{request.proposedDates.length > 0 ? `Días ofrecidos: ${request.proposedDates.map(formatSpanishDate).join(", ")}` : "Sin días ofrecidos"}</p>
+                      <p className="text-xs text-muted-foreground">{request.proposedDates.length > 0 ? `Días ofrecidos: ${request.proposedDates.map(formatSpanishDayMonth).join(", ")}` : "Sin días ofrecidos"}</p>
                       {request.accepterName && <p className="mt-1 text-xs text-muted-foreground">Aceptado por {request.accepterName}.</p>}
                       {previousShiftSummary(request) && <p className="mt-1 text-xs text-muted-foreground">{previousShiftSummary(request)}</p>}
                     </div>
@@ -272,10 +280,10 @@ export function RequestsPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           {visibleRequests.length === 0 ? (
-            <p className="rounded-lg border bg-background p-4 text-sm text-muted-foreground">No hay solicitudes abiertas ahora mismo.</p>
+            <p className="rounded-apple border bg-background p-4 text-sm text-muted-foreground">No hay solicitudes abiertas ahora mismo.</p>
           ) : (
             visibleRequests.map((request) => (
-              <div className="rounded-lg border bg-background p-4" key={request.id}>
+              <div className={cn("rounded-apple border bg-background p-4", highlightedRequestId === request.id && "border-primary ring-2 ring-ring/30")} id={`request-${request.id}`} key={request.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{request.requesterName || "Compañero/a"}</p>
@@ -289,14 +297,14 @@ export function RequestsPanel({
                     {request.proposedDates.map((date) => (
                       <button
                         className={cn(
-                          "min-h-11 rounded-lg border px-3 text-left text-sm",
+                          "min-h-11 rounded-apple border px-3 text-left text-sm",
                           (acceptedDates[request.id] ?? request.proposedDates[0]) === date && "border-primary bg-accent text-accent-foreground"
                         )}
                         key={date}
                         onClick={() => setAcceptedDates((current) => ({ ...current, [request.id]: date }))}
                         type="button"
                       >
-                        {formatSpanishDate(date)}
+                        {formatSpanishDayMonth(date)}
                       </button>
                     ))}
                   </div>

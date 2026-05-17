@@ -34,4 +34,11 @@ export function formatSpanishDate(dateKey: string) {
   }).format(new Date(`${dateKey}T00:00:00`));
 }
 
+export function formatSpanishDayMonth(dateKey: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "long"
+  }).format(new Date(`${dateKey}T00:00:00`));
+}
+
 export const spanishWeekdays = ["L", "M", "X", "J", "V", "S", "D"];

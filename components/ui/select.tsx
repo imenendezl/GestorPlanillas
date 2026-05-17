@@ -13,7 +13,7 @@ function SelectTrigger({ className, children, ...props }: React.ComponentPropsWi
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex min-h-11 w-full appearance-none items-center justify-between gap-2 rounded-full border border-input bg-background px-4 py-2 text-base text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:min-w-0 [&>span]:truncate",
+        "flex min-h-11 w-full appearance-none items-center justify-between gap-2 rounded-apple border border-input bg-background px-4 py-2 text-base text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:min-w-0 [&>span]:truncate",
         className
       )}
       {...props}
@@ -47,7 +47,7 @@ function SelectContent({ className, children, position = "popper", ...props }: R
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cn(
-          "relative z-50 max-h-96 min-w-32 overflow-hidden rounded-lg border bg-popover text-popover-foreground",
+          "relative z-50 max-h-96 min-w-32 overflow-hidden rounded-apple border bg-popover text-popover-foreground",
           position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
           className
         )}

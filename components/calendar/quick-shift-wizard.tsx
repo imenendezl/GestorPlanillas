@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { toast } from "sonner";
 import { saveShiftClientAction } from "@/lib/offline/client-actions";
 import { useOfflineShifts } from "@/lib/offline/use-offline-shifts";
 import { addDays, getMonthDays, spanishWeekdays, toDateKey } from "@/lib/utils/date";
@@ -69,14 +68,10 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
       const result = await saveShiftClientAction(shiftDate, normalizedCodes, shift);
 
       if (result.ok) {
-        if (result.message.startsWith("Sin conexión")) {
-          toast.info(result.message);
-        }
         onSuccess?.();
         return;
       }
 
-      toast.error(result.message);
       setOptimisticShiftCodes((current) => {
         const next = { ...current };
 
@@ -134,7 +129,6 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
 
   function finishEntry() {
     saveCodesForCurrentDay(selectedCodes);
-    toast.success("Turnos guardados.");
     setOpen(false);
   }
 
@@ -183,20 +177,19 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
                   <button
                     aria-label={`${ariaLabel}${existingShiftCodes ? `, turno ${existingShiftCodes.join(" + ")}` : ", sin turno"}`}
                     className={[
-                      "min-h-12 min-w-0 rounded-lg transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
+                      "min-h-12 min-w-0 rounded-apple transition hover:ring-2 hover:ring-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
                       selected && "ring-2 ring-emerald-600"
                     ]
                       .filter(Boolean)
                       .join(" ")}
                     key={dayKey}
                     onClick={() => {
-                      dayWarnings.forEach((warning) => toast.warning(warning.message));
                       selectCalendarDay(day);
                     }}
                     type="button"
                   >
                     <ShiftCell
-                      className="min-h-12 rounded-lg p-1 text-xs sm:min-h-12"
+                      className="min-h-12 rounded-apple p-1 text-xs sm:min-h-12"
                       codes={existingShiftCodes}
                       currentMonth={currentMonth}
                       day={day.getDate()}
@@ -212,7 +205,7 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
           <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
             <Button
               aria-label="Guardar y volver al día anterior"
-              className="min-h-14 w-full rounded-lg sm:min-h-16"
+              className="min-h-14 w-full rounded-apple sm:min-h-16"
               onClick={() => moveDay(-1)}
               size="icon"
               type="button"
@@ -225,7 +218,7 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
                 <button
                   aria-label={definition.label}
                   className={[
-                    "flex min-h-14 w-full min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-lg font-semibold leading-none transition active:scale-95 sm:min-h-16 sm:text-xl",
+                    "flex min-h-14 w-full min-w-0 items-center justify-center rounded-apple border px-1 py-2 text-lg font-semibold leading-none transition active:scale-95 sm:min-h-16 sm:text-xl",
                     definition.colorClassName
                   ]
                     .filter(Boolean)
@@ -240,7 +233,7 @@ export function QuickShiftWizard({ initialDate = new Date(), shifts }: { initial
             })}
             <Button
               aria-label="Guardar y pasar al día siguiente"
-              className="min-h-14 w-full rounded-lg sm:min-h-16"
+              className="min-h-14 w-full rounded-apple sm:min-h-16"
               onClick={() => moveDay(1)}
               size="icon"
               type="button"

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useOfflineShifts } from "@/lib/offline/use-offline-shifts";
 import { getShiftWarnings } from "@/lib/validation/shift-warnings";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { formatSpanishDate } from "@/lib/utils/date";
+import { formatSpanishDayMonth } from "@/lib/utils/date";
 import type { Shift, SwapRequest, WorkRequest } from "@/types/domain";
 
 export function ShiftNotifications({
@@ -71,7 +71,7 @@ export function ShiftNotifications({
           <DropdownMenuItem asChild className="block whitespace-normal py-2" key={`work-${request.id}`}>
             <Link href="/requests#disponibilidad">
               <p className="text-sm font-semibold">Día disponible</p>
-              <p className="mt-1 text-xs text-muted-foreground">Hay disponibilidad para cambios el {formatSpanishDate(request.requestDate)}.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Hay disponibilidad para cambios el {formatSpanishDayMonth(request.requestDate)}.</p>
             </Link>
           </DropdownMenuItem>
         ))}

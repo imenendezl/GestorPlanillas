@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { cancelWorkRequestClientAction, createWorkRequestClientAction } from "@/lib/offline/client-actions";
-import { addDays, formatSpanishDate, toDateKey } from "@/lib/utils/date";
+import { addDays, formatSpanishDayMonth, toDateKey } from "@/lib/utils/date";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,12 +71,12 @@ export function WorkOffersPanel({
           <div className="grid gap-2 sm:grid-cols-2">
             {availableDates.slice(0, 16).map((date) => (
               <button
-                className={cn("min-h-12 rounded-lg border bg-background px-3 text-left text-sm transition", selectedDate === date && "border-primary bg-accent text-accent-foreground")}
+                className={cn("min-h-12 rounded-apple border bg-background px-3 text-left text-sm transition", selectedDate === date && "border-primary bg-accent text-accent-foreground")}
                 key={date}
                 onClick={() => setSelectedDate(date)}
                 type="button"
               >
-                {formatSpanishDate(date)}
+                {formatSpanishDayMonth(date)}
               </button>
             ))}
           </div>
@@ -90,12 +90,12 @@ export function WorkOffersPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           {openOwnRequests.length === 0 ? (
-            <p className="rounded-lg border bg-background p-4 text-sm text-muted-foreground">No has marcado días disponibles.</p>
+            <p className="rounded-apple border bg-background p-4 text-sm text-muted-foreground">No has marcado días disponibles.</p>
           ) : (
             openOwnRequests.map((request) => (
-              <div className="flex items-center justify-between gap-3 rounded-lg border bg-background p-4" key={request.id}>
+              <div className="flex items-center justify-between gap-3 rounded-apple border bg-background p-4" key={request.id}>
                 <div>
-                  <p className="text-sm font-semibold">{formatSpanishDate(request.requestDate)}</p>
+                  <p className="text-sm font-semibold">{formatSpanishDayMonth(request.requestDate)}</p>
                   <Badge className="mt-1" variant="success">Disponible</Badge>
                 </div>
                 <Button disabled={isPending} onClick={() => cancelRequest(request.id)} type="button" variant="outline">Cancelar</Button>
@@ -111,11 +111,11 @@ export function WorkOffersPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           {visibleRequests.length === 0 ? (
-            <p className="rounded-lg border bg-background p-4 text-sm text-muted-foreground">No hay días ofrecidos ahora mismo.</p>
+            <p className="rounded-apple border bg-background p-4 text-sm text-muted-foreground">No hay días ofrecidos ahora mismo.</p>
           ) : (
             visibleRequests.map((request) => (
-              <div className="rounded-lg border bg-background p-4" key={request.id}>
-                <p className="text-sm font-semibold">{formatSpanishDate(request.requestDate)}</p>
+              <div className="rounded-apple border bg-background p-4" key={request.id}>
+                <p className="text-sm font-semibold">{formatSpanishDayMonth(request.requestDate)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">Disponible para cambios.</p>
               </div>
             ))

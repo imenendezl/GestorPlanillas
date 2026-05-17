@@ -32,7 +32,7 @@ function DropdownMenuSubTrigger({
 function DropdownMenuSubContent({ className, ...props }: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>) {
   return (
     <DropdownMenuPrimitive.SubContent
-      className={cn("z-50 min-w-32 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground", className)}
+      className={cn("z-50 min-w-32 overflow-hidden rounded-apple border bg-popover p-1 text-popover-foreground", className)}
       {...props}
     />
   );
@@ -42,7 +42,7 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }: React.Comp
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
-        className={cn("z-50 min-w-44 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground", className)}
+        className={cn("z-50 min-w-44 overflow-hidden rounded-apple border bg-popover p-1 text-popover-foreground", className)}
         sideOffset={sideOffset}
         {...props}
       />

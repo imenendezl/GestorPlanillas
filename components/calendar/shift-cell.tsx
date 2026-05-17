@@ -8,8 +8,11 @@ type ShiftCellProps = {
   codes?: ShiftCode[];
   currentMonth?: boolean;
   selected?: boolean;
+  today?: boolean;
   warning?: boolean;
   annotations?: CalendarSwapAnnotation[];
+  ownRequest?: boolean;
+  visibleRequest?: boolean;
   className?: string;
 };
 
@@ -29,7 +32,7 @@ function getCellStyle(codes?: ShiftCode[]) {
 
   if (secondDefinition) {
     return {
-      background: `linear-gradient(135deg, ${firstDefinition.backgroundColor} 0 49.5%, rgba(255,255,255,0.7) 49.5% 50.5%, ${secondDefinition.backgroundColor} 50.5% 100%)`,
+      background: `linear-gradient(135deg, ${firstDefinition.backgroundColor} 0 50%, ${secondDefinition.backgroundColor} 50% 100%)`,
       color: "#ffffff"
     };
   }
@@ -40,7 +43,18 @@ function getCellStyle(codes?: ShiftCode[]) {
   };
 }
 
-export function ShiftCell({ day, codes, currentMonth = true, selected = false, warning = false, annotations = [], className }: ShiftCellProps) {
+export function ShiftCell({
+  day,
+  codes,
+  currentMonth = true,
+  selected = false,
+  today = false,
+  warning = false,
+  annotations = [],
+  ownRequest = false,
+  visibleRequest = false,
+  className
+}: ShiftCellProps) {
   const sortedCodes = sortShiftCodes(codes ?? []);
   const hasShift = sortedCodes.length > 0;
   const label = sortedCodes.map((code) => shiftDefinitionsByCode.get(code)?.shortLabel ?? code).join("");
@@ -48,9 +62,12 @@ export function ShiftCell({ day, codes, currentMonth = true, selected = false, w
   return (
     <span
       className={cn(
-        "relative flex h-full min-h-[3.4rem] w-full min-w-0 items-center justify-center overflow-hidden rounded-xl border p-1.5 transition sm:min-h-14 sm:p-1.5 lg:min-h-[4.25rem]",
-        hasShift ? "border-transparent shadow-sm" : "border-border bg-background",
+        "relative flex h-full min-h-[3.4rem] w-full min-w-0 items-center justify-center overflow-hidden rounded-apple border p-1.5 transition sm:min-h-14 sm:p-1.5 lg:min-h-[4.25rem]",
+        hasShift
+          ? "border-black/10 shadow-[0_2px_8px_rgba(15,23,42,0.16)] dark:border-white/15 dark:shadow-[0_2px_10px_rgba(0,0,0,0.34)]"
+          : "border-slate-300 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_1px_4px_rgba(15,23,42,0.08)] dark:border-zinc-600 dark:bg-zinc-800 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_1px_8px_rgba(0,0,0,0.22)]",
         !currentMonth && "opacity-55",
+        today && !selected && "ring-2 ring-destructive ring-offset-0",
         selected && "ring-2 ring-emerald-600 ring-offset-0",
         className
       )}
@@ -66,7 +83,20 @@ export function ShiftCell({ day, codes, currentMonth = true, selected = false, w
       <span className={cn("absolute right-1.5 top-1 z-20 text-xs font-semibold sm:right-1.5 sm:top-1 lg:text-[11px]", hasShift && "drop-shadow-sm")}>
         {day}
       </span>
-      {hasShift && <span className="z-20 text-base font-bold leading-none tracking-normal lg:text-sm">{label}</span>}
+      {visibleRequest && (
+        <span aria-hidden="true" className="absolute left-1.5 top-1.5 z-20 flex h-3 w-3">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-sky-500 ring-1 ring-white/70" />
+        </span>
+      )}
+      {hasShift && (
+        <span className="z-20 text-base font-bold leading-none tracking-normal [text-shadow:0_1px_2px_rgba(0,0,0,0.45)] lg:text-sm">
+          {label}
+        </span>
+      )}
+      {ownRequest && annotations.length === 0 && (
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 z-20 h-2 bg-amber-500" />
+      )}
       {annotations.length > 0 && (
         <span className="absolute inset-x-1 bottom-1 z-20 flex min-w-0 justify-center">
           <span
