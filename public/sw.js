@@ -1,4 +1,4 @@
-const CACHE_NAME = "gestor-planillas-shell-v3";
+const CACHE_NAME = "gestor-planillas-shell-v4";
 const SHELL_URLS = [
   "/",
   "/dashboard",
@@ -41,6 +41,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (url.pathname.startsWith("/auth/")) {
+    return;
+  }
+
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
@@ -70,8 +74,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const responseCopy = response.clone();
-          void caches.open(CACHE_NAME).then((cache) => cache.put(request, responseCopy));
+          if (response.ok && !response.redirected) {
+            const responseCopy = response.clone();
+            void caches.open(CACHE_NAME).then((cache) => cache.put(request, responseCopy));
+          }
           return response;
         })
         .catch(async () => {

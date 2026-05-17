@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { OfflineSyncProvider } from "@/components/offline/offline-sync-provider";
 import { ServiceWorkerRegistration } from "@/components/offline/service-worker-registration";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  applicationName: "Gestor de Planillas",
   title: "Gestor de Planillas",
   description: "Gestión de turnos hospitalarios",
   manifest: "/manifest.webmanifest",
@@ -21,6 +22,12 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
   }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#111113",
+  colorScheme: "light dark",
+  viewportFit: "cover"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

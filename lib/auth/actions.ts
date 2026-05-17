@@ -1,14 +1,70 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { encodePendingRegistration, PENDING_REGISTRATION_COOKIE } from "@/lib/auth/registration";
 import { DEV_ADMIN_COOKIE, getRequestUserContext } from "@/lib/auth/session";
 import type { Position } from "@/types/domain";
 
+export type AuthFlowState = {
+  step: "email" | "register";
+  email: string;
+  message?: string;
+  error?: string;
+};
+
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+async function getAuthRedirectUrl() {
+  const requestHeaders = await headers();
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    requestHeaders.get("origin") ??
+    "http://localhost:3000";
+
+  return `${origin}/auth/callback`;
+}
+
+async function signInDevAdmin(email: string) {
+  if (process.env.NODE_ENV !== "development") {
+    return false;
+  }
+
+  const expectedEmail = normalizeEmail(process.env.DEV_ADMIN_EMAIL ?? "");
+  const adminClient = createAdminClient();
+
+  if (!expectedEmail || !adminClient || email !== expectedEmail) {
+    return false;
+  }
+
+  const { data: adminProfile } = await adminClient
+    .from("users")
+    .select("id, role, email")
+    .eq("email", expectedEmail)
+    .eq("role", "Admin")
+    .maybeSingle();
+
+  if (!adminProfile?.id) {
+    return false;
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(DEV_ADMIN_COOKIE, adminProfile.id, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    path: "/"
+  });
+
+  return true;
 }
 
 export async function signInAction(formData: FormData) {
@@ -23,6 +79,149 @@ export async function signInAction(formData: FormData) {
   }
 
   redirect("/dashboard");
+}
+
+export async function continueWithEmailAction(
+  _previousState: AuthFlowState,
+  formData: FormData
+): Promise<AuthFlowState> {
+  const email = normalizeEmail(getString(formData, "email"));
+
+  if (!email) {
+    return { step: "email", email, error: "Indica un correo válido." };
+  }
+
+  if (await signInDevAdmin(email)) {
+    redirect("/dashboard");
+  }
+
+  const adminClient = createAdminClient();
+
+  if (!adminClient) {
+    return {
+      step: "email",
+      email,
+      error: "No se puede comprobar el correo ahora mismo."
+    };
+  }
+
+  const { data: profile } = await adminClient
+    .from("users")
+    .select("id, email, first_name, last_name")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!profile?.id || !profile.first_name?.trim() || !profile.last_name?.trim()) {
+    return { step: "register", email };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: await getAuthRedirectUrl()
+    }
+  });
+
+  if (error) {
+    return {
+      step: "email",
+      email,
+      error: "No se pudo enviar el enlace de acceso."
+    };
+  }
+
+  return {
+    step: "email",
+    email,
+    message: "Te enviamos un enlace de acceso. Revisa tu correo."
+  };
+}
+
+export async function completeRegistrationAction(
+  _previousState: AuthFlowState,
+  formData: FormData
+): Promise<AuthFlowState> {
+  const email = normalizeEmail(getString(formData, "email"));
+  const firstName = getString(formData, "firstName");
+  const lastName = getString(formData, "lastName");
+  const serviceCode = getString(formData, "serviceCode").replace(/\s+/g, "").toUpperCase();
+
+  if (!email) {
+    return { step: "email", email, error: "Indica un correo válido." };
+  }
+
+  if (!firstName || !lastName || !serviceCode) {
+    return {
+      step: "register",
+      email,
+      error: "Completa nombre, apellidos y código de servicio."
+    };
+  }
+
+  const cookieStore = await cookies();
+  const adminClient = createAdminClient();
+  const { data: existingProfile } = adminClient
+    ? await adminClient.from("users").select("id").eq("email", email).maybeSingle()
+    : { data: null };
+
+  if (adminClient && existingProfile?.id) {
+    await adminClient.auth.admin.updateUserById(existingProfile.id, {
+      user_metadata: {
+        firstName,
+        lastName,
+        serviceCode
+      }
+    });
+  }
+
+  cookieStore.set(
+    PENDING_REGISTRATION_COOKIE,
+    encodePendingRegistration({ email, firstName, lastName, serviceCode }),
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/auth/callback",
+      maxAge: 60 * 30
+    }
+  );
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: await getAuthRedirectUrl(),
+      data: {
+        firstName,
+        lastName,
+        serviceCode
+      }
+    }
+  });
+
+  if (error) {
+    cookieStore.set(PENDING_REGISTRATION_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/auth/callback",
+      maxAge: 0
+    });
+    return {
+      step: "register",
+      email,
+      error: "No se pudo enviar el enlace de alta."
+    };
+  }
+
+  return {
+    step: "email",
+    email,
+    message: "Te enviamos un enlace para completar el alta. Revisa tu correo."
+  };
 }
 
 export async function signUpAction(formData: FormData) {

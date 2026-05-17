@@ -1,74 +1,100 @@
-import Link from "next/link";
-import { devAdminSignInAction, signInAction } from "@/lib/auth/actions";
+"use client";
+
+import type { ReactNode } from "react";
+import { useActionState } from "react";
+import { completeRegistrationAction, continueWithEmailAction, type AuthFlowState } from "@/lib/auth/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export function LoginForm({
-  error,
-  message,
-  devBypassEnabled,
-}: {
-  error?: string;
-  message?: string;
-  devBypassEnabled?: boolean;
-}) {
+function SubmitButton({ children }: { children: ReactNode }) {
   return (
-    <div className="space-y-5">
-      <form action={signInAction} className="space-y-5">
-        <div>
-          <label className="mb-2 block text-sm font-semibold" htmlFor="email">
-            Correo electrónico
-          </label>
-          <Input autoComplete="email" id="email" name="email" required type="email" />
+    <Button className="w-full" type="submit">
+      {children}
+    </Button>
+  );
+}
+
+export function LoginForm({ error, message }: { error?: string; message?: string }) {
+  const initialState: AuthFlowState = {
+    step: "email",
+    email: "",
+    error,
+    message
+  };
+  const [emailState, continueAction, isCheckingEmail] = useActionState(continueWithEmailAction, initialState);
+  const [registrationState, registerAction, isRegistering] = useActionState(completeRegistrationAction, {
+    ...emailState,
+    error: undefined,
+    message: undefined
+  });
+  const showRegistration = emailState.step === "register" && !registrationState.message;
+  const state = showRegistration ? registrationState : registrationState.message ? registrationState : emailState;
+  const email = emailState.email || registrationState.email;
+
+  if (showRegistration) {
+    return (
+      <form action={registerAction} className="space-y-5">
+        <input name="email" type="hidden" value={email} />
+        <div className="rounded-lg border border-black/10 bg-black/[0.03] px-4 py-3 text-sm text-black/70 dark:border-white/15 dark:bg-white/10 dark:text-white/75">
+          {email}
         </div>
-        <div>
-          <label className="mb-2 block text-sm font-semibold" htmlFor="password">Contraseña</label>
-          <Input autoComplete="current-password" id="password" name="password" required type="password" />
-        </div>
-        {message && (
-          <Alert variant="success">
-            <AlertDescription>{message}</AlertDescription>
-          </Alert>
-        )}
-        {error && (
-          <Alert variant="error">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <Button className="w-full" type="submit">
-          Entrar
-        </Button>
-      </form>
-      {devBypassEnabled && (
-        <form
-          action={devAdminSignInAction}
-          className="space-y-3 rounded-apple border bg-muted/35 p-4"
-        >
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-semibold" htmlFor="devAdminEmail">
-              Acceso admin de desarrollo
+            <label className="mb-2 block text-sm font-semibold" htmlFor="firstName">
+              Nombre
             </label>
-            <Input
-              autoComplete="email"
-              id="devAdminEmail"
-              name="devAdminEmail"
-              placeholder="Usuario admin"
-              required
-              type="email"
-            />
+            <Input autoComplete="given-name" id="firstName" name="firstName" required />
           </div>
-          <Button className="w-full" type="submit" variant="secondary">
-            Entrar sin contraseña
-          </Button>
-        </form>
+          <div>
+            <label className="mb-2 block text-sm font-semibold" htmlFor="lastName">
+              Apellidos
+            </label>
+            <Input autoComplete="family-name" id="lastName" name="lastName" required />
+          </div>
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-semibold" htmlFor="serviceCode">
+            Código de servicio
+          </label>
+          <Input
+            autoCapitalize="characters"
+            autoComplete="one-time-code"
+            id="serviceCode"
+            name="serviceCode"
+            required
+            spellCheck={false}
+          />
+        </div>
+        {state.error && (
+          <Alert variant="error">
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
+        <SubmitButton>{isRegistering ? "Enviando enlace..." : "Continuar"}</SubmitButton>
+      </form>
+    );
+  }
+
+  return (
+    <form action={continueAction} className="space-y-5">
+      <div>
+        <label className="mb-2 block text-sm font-semibold" htmlFor="email">
+          Correo electrónico
+        </label>
+        <Input autoComplete="email" id="email" name="email" required type="email" />
+      </div>
+      {state.message && (
+        <Alert variant="success">
+          <AlertDescription>{state.message}</AlertDescription>
+        </Alert>
       )}
-      <p className="text-center text-sm text-black/65 dark:text-white/70">
-        ¿Aún no tienes cuenta?{" "}
-        <Link className="text-action" href="/register">
-          Crear cuenta
-        </Link>
-      </p>
-    </div>
+      {state.error && (
+        <Alert variant="error">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      )}
+      <SubmitButton>{isCheckingEmail ? "Comprobando..." : "Continuar"}</SubmitButton>
+    </form>
   );
 }

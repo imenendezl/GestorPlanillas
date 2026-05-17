@@ -153,7 +153,7 @@ begin
   where active = true
     and (expires_at is null or expires_at > now())
     and (max_uses is null or uses < max_uses)
-    and extensions.crypt(invitation_code, code_hash) = code_hash
+    and crypt(invitation_code, code_hash) = code_hash
   order by created_at desc
   limit 1;
 
@@ -216,7 +216,65 @@ begin
 end;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  requested_unit text;
+  requested_position public.user_position;
+  resolved_unit public.units%rowtype;
+begin
+  requested_unit := coalesce(nullif(new.raw_user_meta_data ->> 'unit', ''), 'Urgencias');
+  requested_position := coalesce(nullif(new.raw_user_meta_data ->> 'position', '')::public.user_position, 'Nurse');
+
+  select *
+  into resolved_unit
+  from public.units
+  where name = requested_unit
+  order by created_at asc
+  limit 1;
+
+  if resolved_unit.id is null then
+    insert into public.units (name, hospital_id)
+    values (
+      requested_unit,
+      (select id from public.hospitals where name = 'Hospital principal' limit 1)
+    )
+    returning * into resolved_unit;
+  end if;
+
+  insert into public.users (
+    id,
+    first_name,
+    last_name,
+    email,
+    unit,
+    hospital_id,
+    unit_id,
+    position,
+    role,
+    status
+  )
+  values (
+    new.id,
+    coalesce(nullif(new.raw_user_meta_data ->> 'firstName', ''), ''),
+    coalesce(nullif(new.raw_user_meta_data ->> 'lastName', ''), ''),
+    lower(new.email),
+    resolved_unit.name,
+    resolved_unit.hospital_id,
+    resolved_unit.id,
+    requested_position,
+    'Employee',
+    'Pending'
+  )
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
 
 alter table public.hospitals enable row level security;
 alter table public.invitation_codes enable row level security;
