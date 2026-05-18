@@ -18,9 +18,9 @@ export async function requireUser() {
 
 export async function requireRole(allowedRoles: UserRole[]) {
   const context = await requireUser();
-  const { data: profile } = await context.db.from("users").select("role").eq("id", context.userId).single();
+  const { data: profile } = await context.db.from("users").select("role, status").eq("id", context.userId).single();
 
-  if (!profile || !allowedRoles.includes(profile.role)) {
+  if (!profile || profile.status !== "Active" || !allowedRoles.includes(profile.role)) {
     throw new ForbiddenError();
   }
 
@@ -34,10 +34,10 @@ export async function requireSameStaffGroup(targetUserId: string) {
     return context;
   }
 
-  const { data: viewer } = await context.db.from("users").select("unit, position").eq("id", context.userId).single();
-  const { data: target } = await context.db.from("users").select("unit, position").eq("id", targetUserId).single();
+  const { data: viewer } = await context.db.from("users").select("unit, position, status").eq("id", context.userId).single();
+  const { data: target } = await context.db.from("users").select("unit, position, status").eq("id", targetUserId).single();
 
-  if (!viewer || !target || viewer.unit !== target.unit || viewer.position !== target.position) {
+  if (!viewer || !target || viewer.status !== "Active" || target.status !== "Active" || viewer.unit !== target.unit || viewer.position !== target.position) {
     throw new ForbiddenError("Solo puedes actuar sobre personas de tu misma unidad y categoría.");
   }
 

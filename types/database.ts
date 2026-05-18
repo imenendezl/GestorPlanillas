@@ -1,4 +1,4 @@
-import type { Position, ShiftCode, SwapMode, SwapStatus, UserRole, WorkRequestStatus } from "./domain";
+import type { Position, ShiftCode, SwapMode, SwapStatus, UserRole, UserStatus, WorkRequestStatus } from "./domain";
 
 export type Database = {
   public: {
@@ -25,8 +25,11 @@ export type Database = {
           last_name: string;
           email: string;
           unit: string;
+          hospital_id: string | null;
+          unit_id: string | null;
           position: Position;
           role: UserRole;
+          status: UserStatus;
           created_at: string;
           updated_at: string;
         };
@@ -36,8 +39,11 @@ export type Database = {
           last_name: string;
           email: string;
           unit: string;
+          hospital_id?: string | null;
+          unit_id?: string | null;
           position: Position;
           role?: UserRole;
+          status?: UserStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -46,8 +52,11 @@ export type Database = {
           last_name: string;
           email: string;
           unit: string;
+          hospital_id: string | null;
+          unit_id: string | null;
           position: Position;
           role: UserRole;
+          status: UserStatus;
           updated_at: string;
         }>;
         Relationships: [];

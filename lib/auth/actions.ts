@@ -1,25 +1,27 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies, headers } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { encodePendingRegistration, PENDING_REGISTRATION_COOKIE } from "@/lib/auth/registration";
 import { DEV_ADMIN_COOKIE, getRequestUserContext } from "@/lib/auth/session";
 import { toUserProfile } from "@/lib/auth/dto";
 import {
   authEmailSchema,
   getValidationMessage,
   legacySignUpSchema,
+  otpSchema,
   profileSchema,
   registrationSchema,
   signInSchema,
   updateEmailSchema,
   updatePasswordSchema
 } from "@/lib/validation/schemas";
+import type { PendingUser, UserStatus } from "@/types/domain";
 
 export type AuthFlowState = {
-  step: "email" | "register";
+  step: "email" | "otp" | "register" | "pendingApproval" | "blocked";
   email: string;
   message?: string;
   error?: string;
@@ -31,16 +33,6 @@ function getString(formData: FormData, key: string) {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
-}
-
-async function getAuthRedirectUrl() {
-  const requestHeaders = await headers();
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    requestHeaders.get("origin") ??
-    "http://localhost:3000";
-
-  return `${origin}/auth/callback`;
 }
 
 async function signInDevAdmin(email: string) {
@@ -60,6 +52,7 @@ async function signInDevAdmin(email: string) {
     .select("id, role, email")
     .eq("email", expectedEmail)
     .eq("role", "Admin")
+    .eq("status", "Active")
     .maybeSingle();
 
   if (!adminProfile?.id) {
@@ -75,6 +68,22 @@ async function signInDevAdmin(email: string) {
   });
 
   return true;
+}
+
+function getProfileAccessState(profile: { first_name: string; last_name: string; status: UserStatus } | null | undefined): AuthFlowState["step"] {
+  if (!profile?.first_name?.trim() || !profile.last_name?.trim()) {
+    return "register";
+  }
+
+  if (profile.status === "Active") {
+    return "email";
+  }
+
+  if (profile.status === "Pending") {
+    return "pendingApproval";
+  }
+
+  return "blocked";
 }
 
 export async function signInAction(formData: FormData) {
@@ -99,7 +108,7 @@ export async function signInAction(formData: FormData) {
   redirect("/dashboard");
 }
 
-export async function continueWithEmailAction(
+export async function requestOtpAction(
   _previousState: AuthFlowState,
   formData: FormData
 ): Promise<AuthFlowState> {
@@ -115,32 +124,11 @@ export async function continueWithEmailAction(
     redirect("/dashboard");
   }
 
-  const adminClient = createAdminClient();
-
-  if (!adminClient) {
-    return {
-      step: "email",
-      email,
-      error: "No se puede comprobar el correo ahora mismo."
-    };
-  }
-
-  const { data: profile } = await adminClient
-    .from("users")
-    .select("id, email, first_name, last_name")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (!profile?.id || !profile.first_name?.trim() || !profile.last_name?.trim()) {
-    return { step: "register", email };
-  }
-
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: false,
-      emailRedirectTo: await getAuthRedirectUrl()
+      shouldCreateUser: true
     }
   });
 
@@ -148,18 +136,98 @@ export async function continueWithEmailAction(
     return {
       step: "email",
       email,
-      error: "No se pudo enviar el enlace de acceso."
+      error: "No se pudo enviar el código."
     };
   }
 
   return {
-    step: "email",
+    step: "otp",
     email,
-    message: "Te enviamos un enlace de acceso. Revisa tu correo."
+    message: "Introduce el código que te hemos enviado."
   };
 }
 
-export async function completeRegistrationAction(
+export async function verifyOtpAction(
+  _previousState: AuthFlowState,
+  formData: FormData
+): Promise<AuthFlowState> {
+  const parsed = otpSchema.safeParse({
+    email: formData.get("email"),
+    otp: formData.get("otp")
+  });
+
+  if (!parsed.success) {
+    return {
+      step: "otp",
+      email: String(formData.get("email") ?? ""),
+      error: getValidationMessage(parsed.error)
+    };
+  }
+
+  const { email, otp } = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: "email"
+  });
+
+  if (error || !data.user) {
+    return {
+      step: "otp",
+      email,
+      error: "El código no es válido o ha caducado."
+    };
+  }
+
+  const adminClient = createAdminClient();
+
+  if (!adminClient) {
+    await supabase.auth.signOut();
+    return {
+      step: "email",
+      email,
+      error: "No se pudo comprobar el usuario ahora mismo."
+    };
+  }
+
+  const { data: profile } = await adminClient
+    .from("users")
+    .select("first_name, last_name, status")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  const nextStep = getProfileAccessState(profile);
+
+  if (nextStep === "email") {
+    redirect("/dashboard");
+  }
+
+  if (nextStep === "pendingApproval") {
+    await supabase.auth.signOut();
+    return {
+      step: "pendingApproval",
+      email,
+      message: "Tu alta está pendiente de aprobación."
+    };
+  }
+
+  if (nextStep === "blocked") {
+    await supabase.auth.signOut();
+    return {
+      step: "blocked",
+      email,
+      error: "Tu cuenta no está activa. Contacta con administración."
+    };
+  }
+
+  return {
+    step: "register",
+    email,
+    message: "Completa tus datos para solicitar el alta."
+  };
+}
+
+export async function completeOtpRegistrationAction(
   _previousState: AuthFlowState,
   formData: FormData
 ): Promise<AuthFlowState> {
@@ -179,14 +247,20 @@ export async function completeRegistrationAction(
   }
 
   const { email, firstName, lastName, serviceCode } = parsed.data;
-  const cookieStore = await cookies();
+  const supabase = await createClient();
   const adminClient = createAdminClient();
-  const { data: existingProfile } = adminClient
-    ? await adminClient.from("users").select("id").eq("email", email).maybeSingle()
-    : { data: null };
+  const { data: userData } = await supabase.auth.getUser();
 
-  if (adminClient && existingProfile?.id) {
-    await adminClient.auth.admin.updateUserById(existingProfile.id, {
+  if (!userData.user || userData.user.email?.toLowerCase() !== email) {
+    return {
+      step: "otp",
+      email,
+      error: "Vuelve a validar el código para completar el alta."
+    };
+  }
+
+  if (adminClient) {
+    await adminClient.auth.admin.updateUserById(userData.user.id, {
       user_metadata: {
         firstName,
         lastName,
@@ -195,53 +269,32 @@ export async function completeRegistrationAction(
     });
   }
 
-  cookieStore.set(
-    PENDING_REGISTRATION_COOKIE,
-    encodePendingRegistration({ email, firstName, lastName, serviceCode }),
-    {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/auth/callback",
-      maxAge: 60 * 30
-    }
-  );
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: await getAuthRedirectUrl(),
-      data: {
-        firstName,
-        lastName,
-        serviceCode
-      }
-    }
+  const { error } = await supabase.rpc("claim_invitation", {
+    invitation_code: serviceCode,
+    first_name_input: firstName,
+    last_name_input: lastName,
+    position_input: null
   });
 
+  await supabase.auth.signOut();
+
   if (error) {
-    cookieStore.set(PENDING_REGISTRATION_COOKIE, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/auth/callback",
-      maxAge: 0
-    });
     return {
       step: "register",
       email,
-      error: "No se pudo enviar el enlace de alta."
+      error: error.message || "No se pudo validar el código de servicio."
     };
   }
 
   return {
-    step: "email",
+    step: "pendingApproval",
     email,
-    message: "Te enviamos un enlace para completar el alta. Revisa tu correo."
+    message: "Tu alta está pendiente de aprobación."
   };
 }
+
+export const continueWithEmailAction = requestOtpAction;
+export const completeRegistrationAction = completeOtpRegistrationAction;
 
 export async function signUpAction(formData: FormData) {
   const supabase = await createClient();
@@ -298,6 +351,7 @@ export async function devAdminSignInAction(formData: FormData) {
     .select("id, role, email")
     .eq("email", expectedEmail)
     .eq("role", "Admin")
+    .eq("status", "Active")
     .maybeSingle();
 
   if (!adminProfile?.id) {
@@ -334,6 +388,7 @@ export async function getCurrentProfile() {
     .from("users")
     .select("*")
     .eq("id", context.userId)
+    .eq("status", "Active")
     .single();
 
   if (!data) {
@@ -341,6 +396,121 @@ export async function getCurrentProfile() {
   }
 
   return toUserProfile(data);
+}
+
+function mapPendingUser(row: {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  unit: string;
+  position: PendingUser["position"];
+  status: PendingUser["status"];
+  created_at: string;
+}): PendingUser {
+  return {
+    id: row.id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+    unit: row.unit,
+    position: row.position,
+    status: row.status,
+    createdAt: row.created_at
+  };
+}
+
+export async function listPendingUsersForApproval() {
+  const context = await getRequestUserContext();
+  const adminClient = createAdminClient();
+
+  if (!context || !adminClient) {
+    return [];
+  }
+
+  const { data: currentUser } = await adminClient
+    .from("users")
+    .select("role, hospital_id, unit_id")
+    .eq("id", context.userId)
+    .eq("status", "Active")
+    .maybeSingle();
+
+  if (!currentUser || (currentUser.role !== "Admin" && currentUser.role !== "Supervisor")) {
+    return [];
+  }
+
+  if (currentUser.role === "Supervisor" && (!currentUser.hospital_id || !currentUser.unit_id)) {
+    return [];
+  }
+
+  let query = adminClient
+    .from("users")
+    .select("id, first_name, last_name, email, unit, position, status, created_at")
+    .eq("status", "Pending")
+    .order("created_at", { ascending: true });
+
+  if (currentUser.role === "Supervisor") {
+    query = query.eq("hospital_id", currentUser.hospital_id!).eq("unit_id", currentUser.unit_id!);
+  }
+
+  const { data } = await query;
+  return (data ?? []).map(mapPendingUser);
+}
+
+export async function updateUserApprovalAction(formData: FormData) {
+  const context = await getRequestUserContext();
+  const adminClient = createAdminClient();
+  const userId = getString(formData, "userId");
+  const decision = getString(formData, "decision");
+
+  if (!context || !adminClient) {
+    return { ok: false, message: "Debes iniciar sesión." };
+  }
+
+  if (!userId || (decision !== "approve" && decision !== "reject")) {
+    return { ok: false, message: "Solicitud no válida." };
+  }
+
+  const { data: currentUser } = await adminClient
+    .from("users")
+    .select("role, hospital_id, unit_id")
+    .eq("id", context.userId)
+    .eq("status", "Active")
+    .maybeSingle();
+
+  if (!currentUser || (currentUser.role !== "Admin" && currentUser.role !== "Supervisor")) {
+    return { ok: false, message: "No tienes permisos para aprobar usuarios." };
+  }
+
+  if (currentUser.role === "Supervisor" && (!currentUser.hospital_id || !currentUser.unit_id)) {
+    return { ok: false, message: "Tu perfil no tiene ámbito de supervisión configurado." };
+  }
+
+  let targetQuery = adminClient.from("users").select("id").eq("id", userId).eq("status", "Pending");
+
+  if (currentUser.role === "Supervisor") {
+    targetQuery = targetQuery.eq("hospital_id", currentUser.hospital_id!).eq("unit_id", currentUser.unit_id!);
+  }
+
+  const { data: targetUser } = await targetQuery.maybeSingle();
+
+  if (!targetUser) {
+    return { ok: false, message: "No se encontró el usuario pendiente." };
+  }
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ status: decision === "approve" ? "Active" : "Rejected" })
+    .eq("id", userId);
+
+  if (error) {
+    return { ok: false, message: "No se pudo actualizar la aprobación." };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/supervisor");
+
+  return { ok: true, message: decision === "approve" ? "Usuario aprobado." : "Usuario rechazado." };
 }
 
 export async function updateProfileAction(formData: FormData) {

@@ -42,6 +42,14 @@ export const authEmailSchema = z.object({
   email: emailSchema
 });
 
+export const otpSchema = z.object({
+  email: emailSchema,
+  otp: z
+    .string()
+    .trim()
+    .regex(/^\d{8}$/, "Introduce el código de 8 dígitos.")
+});
+
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Indica tu contraseña.").max(128)

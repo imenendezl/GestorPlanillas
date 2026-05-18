@@ -142,5 +142,8 @@ export async function GET(request: Request) {
     },
   });
 
-  return redirectTo(request, "/dashboard");
+  await supabase.auth.signOut();
+  return redirectTo(request, "/login", {
+    message: "Tu alta está pendiente de aprobación.",
+  });
 }

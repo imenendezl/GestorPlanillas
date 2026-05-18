@@ -10,7 +10,10 @@ export function toUserProfile(row: UserRow): UserProfile {
     lastName: row.last_name,
     email: row.email,
     unit: row.unit,
+    hospitalId: row.hospital_id,
+    unitId: row.unit_id,
     position: row.position,
-    role: row.role
+    role: row.role,
+    status: row.status
   };
 }
